@@ -4,8 +4,13 @@ import (
 	"log"
 	"time"
 
+	"sync"
+
 	"github.com/spf13/viper"
 )
+
+var once sync.Once
+var config *Config
 
 type Config struct {
 	DatabaseHost            string        `mapstructure:"DATABASE_HOST"`
@@ -44,15 +49,19 @@ func parseConfig(v *viper.Viper) (*Config, error) {
 }
 
 func GetConfig() *Config {
-	v, err := loadEnvConfig()
-	if err != nil {
-		log.Fatalf("Error loading environment config: %v", err)
-	}
 
-	config, err := parseConfig(v)
-	if err != nil {
-		log.Fatalf("Error parsing config: %v", err)
-	}
+	once.Do(func() {
+		v, err := loadEnvConfig()
+		if err != nil {
+			log.Fatalf("Error loading environment config: %v", err)
+		}
+
+		config, err = parseConfig(v)
+		if err != nil {
+			log.Fatalf("Error parsing config: %v", err)
+		}
+
+	})
 
 	return config
 }
