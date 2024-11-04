@@ -2,6 +2,8 @@ package config
 
 import (
 	"log"
+	"path/filepath"
+	"runtime"
 	"time"
 
 	"sync"
@@ -25,8 +27,12 @@ type Config struct {
 }
 
 func loadEnvConfig() (*viper.Viper, error) {
+
+	_, b, _, _ := runtime.Caller(0)
+	root := filepath.Join(filepath.Dir(b), "..")
+
 	v := viper.New()
-	v.SetConfigFile(".env")
+	v.SetConfigFile(filepath.Join(root, ".env"))
 	v.AutomaticEnv()
 
 	err := v.ReadInConfig()
