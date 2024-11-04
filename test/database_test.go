@@ -1,29 +1,11 @@
-package database
+package test
 
 import (
-	"magical-crwler/config"
-	"os"
 	"testing"
 )
 
-func TestMain(m *testing.M) {
-	New()
-	config := config.GetConfig()
-	err := dbService.Init(config)
-	if err != nil {
-		panic("Failed to connect to database: " + err.Error())
-	}
-
-	defer dbService.Close()
-	code := m.Run()
-
-	os.Exit(code)
-
-}
-
 func TestDatabaseConnection(t *testing.T) {
-
-	db, err := dbService.GetDb().DB()
+	db, err := testDbService.GetDb().DB()
 
 	if err != nil {
 		t.Fatalf("Failed to Get Database Connections: %v", err)
@@ -36,7 +18,8 @@ func TestDatabaseConnection(t *testing.T) {
 }
 
 func TestSelectQuery(t *testing.T) {
-	db, _ := dbService.GetDb().DB()
+
+	db, _ := testDbService.GetDb().DB()
 	var result int
 	err := db.QueryRow("SELECT 1").Scan(&result)
 	if err != nil {
