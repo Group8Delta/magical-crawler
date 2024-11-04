@@ -1,10 +1,13 @@
 package models
 
+import "time"
+
 type CrawlerFunctionality struct {
-	ID                         int64
-	Duration                   float64
-	CPUUsage                   float32
-	RAMUsage                   float32
-	NumberOfRequests           int
-	NumberOfSuccessfulRequests int
+	ID                 uint
+	Date               time.Time
+	Duration           int
+	CPUUsage           int
+	RAMUsage           int
+	TotalRequests      int
+	SuccessfulRequests int
 }

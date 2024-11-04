@@ -1,8 +1,8 @@
 package models
 
-type BookMarks struct {
-	Id       int64
-	User_id  int64
+type Bookmark struct {
+	ID       uint
+	AdId     uint
+	UserId   uint
 	IsPublic bool
-	Ad_id    int64
 }

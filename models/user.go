@@ -1,11 +1,12 @@
 package models
 
 type Users struct {
-	Id        int64
+	ID        uint
 	FirstName string
 	LastName  string
 	Email     string
-	Role_id   int64
-	Role      Roles
-	BookMarks []BookMarks
+	RoleId    uint
+	Role      Role
+	Bookmarks []Bookmark
+	Filters   []UserFilter
 }

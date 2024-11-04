@@ -1,6 +1,6 @@
 package models
 
-type Roles struct {
-	Id   int64
+type Role struct {
+	ID   uint
 	Name string
 }
