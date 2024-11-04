@@ -27,14 +27,11 @@ type Config struct {
 
 func loadEnvConfig() (*viper.Viper, error) {
 	v := viper.New()
-
 	// Use AutomaticEnv to bind environment variables directly
 	v.AutomaticEnv()
-
 	// Load the .env file if running locally, e.g., without Docker
 	v.SetConfigFile(".env")
 	if err := v.ReadInConfig(); err == nil {
-		log.Printf("No .env file found or unable to read: %v", err)
 		return v, nil
 	} else {
 		// Bind each environment variable explicitly
