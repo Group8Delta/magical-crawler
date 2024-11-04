@@ -2,8 +2,10 @@ package main
 
 import (
 	"fmt"
+	_ "fmt"
 	"magical-crwler/config"
 	"magical-crwler/database"
+	_ "magical-crwler/database"
 )
 
 func main() {
@@ -21,4 +23,14 @@ func main() {
 	if err != nil {
 		fmt.Println("database connection error", err)
 	}
+
+	// bot, err := bot.NewBot(bot.BotConfig{
+	// 	Token:  config.BotToken,
+	// 	Poller: 10 * time.Second,
+	// })
+	// if err != nil {
+	// 	log.Println(err.Error())
+	// }
+	// bot.StartBot()
+
 }
