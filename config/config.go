@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"log"
+	"os"
 	"path/filepath"
 	"runtime"
 	"time"
@@ -31,16 +32,17 @@ type Config struct {
 func loadEnvConfig() (*viper.Viper, error) {
 	_, b, _, _ := runtime.Caller(0)
 	root := filepath.Join(filepath.Dir(b), "..")
-
 	v := viper.New()
-	v.SetConfigFile(filepath.Join(root, ".env"))
-	v.AutomaticEnv()
+	if os.Getenv("DOCKER-DEPLOY") == "" {
+		v.SetConfigFile(filepath.Join(root, ".env"))
+		v.AutomaticEnv()
 
-	if err := v.ReadInConfig(); err != nil {
-		return nil, fmt.Errorf("failed to read config file: %w", err)
+		if err := v.ReadInConfig(); err != nil {
+			return nil, fmt.Errorf("failed to read config file: %w", err)
+		}
+	} else {
+		bindEnvVars(v)
 	}
-
-	bindEnvVars(v)
 
 	// Optional: Check if required variables are set and return an error if any are missing
 	missingVars := checkRequiredVars(v, []string{
