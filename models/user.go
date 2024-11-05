@@ -1,12 +1,14 @@
 package models
 
-type Users struct {
-	ID        uint
-	FirstName string
-	LastName  string
-	Email     string
-	RoleId    uint
-	Role      Role
-	Bookmarks []Bookmark
-	Filters   []UserFilter
+type User struct {
+	ID           uint
+	FirstName    string
+	LastName     string
+	Email        *string
+	PasswordHash *string
+	RoleId       *uint
+	Role         *Role `gorm:"constraint:OnDelete:SET NULL;"`
+	Bookmarks    []Bookmark
+	Filters      []UserFilter
+	FilteredAds  []FilteredAd
 }

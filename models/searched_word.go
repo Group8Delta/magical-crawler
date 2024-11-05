@@ -1,6 +1,6 @@
 package models
 
-type SearchedWord struct {
+type SearchedWord struct { //todo
 	ID    uint
 	Name  string
 	Count int

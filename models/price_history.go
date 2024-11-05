@@ -4,7 +4,8 @@ import "time"
 
 type PriceHistory struct {
 	ID          uint
-	AddId       uint
-	Price       int
+	AdID        uint
+	Price       int64
+	RentPrice   *int
 	SubmittedAt time.Time
 }

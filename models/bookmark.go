@@ -2,7 +2,7 @@ package models
 
 type Bookmark struct {
 	ID       uint
-	AdId     uint
-	UserId   uint
+	AdID     uint
+	UserID   uint
 	IsPublic bool
 }
