@@ -1,7 +1,6 @@
 package bot
 
 import (
-	"fmt"
 	"log"
 	"time"
 
@@ -16,12 +15,6 @@ type BotConfig struct {
 	Token  string
 	Poller time.Duration
 }
-type Route struct {
-	command string
-	handler func(telebot.Context) error
-}
-
-var routes []Route
 
 func NewBot(config BotConfig) (*Bot, error) {
 	bot, err := telebot.NewBot(telebot.Settings{
@@ -38,10 +31,7 @@ func NewBot(config BotConfig) (*Bot, error) {
 }
 
 func (b *Bot) StartBot() {
-	for _, r := range routes {
-
-		b.bot.Handle(fmt.Sprintf("/%s", r.command), r.handler)
-	}
 	log.Print("Bot is running !")
+	// Start(b)
 	b.bot.Start()
 }
