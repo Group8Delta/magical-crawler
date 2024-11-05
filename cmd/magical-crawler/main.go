@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"magical-crwler/config"
 	"magical-crwler/database"
+	"net/http"
 )
 
 func main() {
@@ -21,4 +22,6 @@ func main() {
 	if err != nil {
 		fmt.Println("database connection error", err)
 	}
+
+	http.ListenAndServe(":"+config.Port, nil)
 }

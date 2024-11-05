@@ -6,7 +6,6 @@ import (
 
 func TestDatabaseConnection(t *testing.T) {
 	db, err := testDbService.GetDb().DB()
-
 	if err != nil {
 		t.Fatalf("Failed to Get Database Connections: %v", err)
 
@@ -18,7 +17,6 @@ func TestDatabaseConnection(t *testing.T) {
 }
 
 func TestSelectQuery(t *testing.T) {
-
 	db, _ := testDbService.GetDb().DB()
 	var result int
 	err := db.QueryRow("SELECT 1").Scan(&result)
