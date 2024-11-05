@@ -1,12 +1,11 @@
 package test
 
-import( 
-	"testing"
+import (
 	"magical-crwler/services"
+	"testing"
 )
 
-
-func TestCrawl(t *testing.T){
-	url:="https://divar.ir/s/zanjan/buy-residential"
+func TestCrawl(t *testing.T) {
+	url := "https://divar.ir/s/zanjan/buy-residential"
 	services.CrawlHomeAds(url)
 }

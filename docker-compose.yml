@@ -58,6 +58,7 @@ services:
       - DATABASE_MAX_OPEN_CONNS=${DATABASE_MAX_OPEN_CONNS}
       - DATABASE_CONN_MAX_LIFETIME=${DATABASE_CONN_MAX_LIFETIME}
       - PORT=${PORT}
+      - DOCKER-DEPLOY=true
     ports:
       - 8080:8080
     depends_on:
