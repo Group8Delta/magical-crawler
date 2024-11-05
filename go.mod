@@ -4,6 +4,7 @@ go 1.21.6
 
 require (
 	github.com/gocolly/colly v1.2.0
+	github.com/gocolly/colly/v2 v2.1.0
 	github.com/spf13/viper v1.19.0
 	gorm.io/driver/postgres v1.5.9
 	gorm.io/gorm v1.25.12
