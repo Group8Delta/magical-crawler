@@ -1,14 +1,14 @@
 package services
 
 import (
+	"context"
 	"fmt"
 	"log"
-	"net/http"
+	"strings"
 	"time"
 
-	"math/rand"
-
-	"github.com/gocolly/colly"
+	"github.com/PuerkitoBio/goquery"
+	"github.com/chromedp/chromedp"
 )
 
 var userAgents = []string{
@@ -25,56 +25,155 @@ var userAgents = []string{
 }
 
 func CrawlDivarAds(url string) {
-	// Instantiate main collector for the initial page
-	mainCollector := colly.NewCollector(
-		colly.AllowedDomains("www.divar.ir", "divar.ir"),
+	ctx, cancel := chromedp.NewContext(context.Background())
+	defer cancel()
+
+	ctx, cancel = context.WithTimeout(ctx, 100*time.Second)
+	defer cancel()
+
+	max_deepth := 40
+	deepth := 0
+
+	var lastHeight, newHeight int64
+	var allHTMLContent strings.Builder
+
+	err := chromedp.Run(ctx,
+		chromedp.Navigate(url),
 	)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	mainCollector.Limit(&colly.LimitRule{
-		DomainGlob:  "*divar.ir*", // Applies to all subdomains of divar.ir
-		Delay:       200 * time.Millisecond,
-		RandomDelay: 500 * time.Millisecond, // Adds up to 0.5 seconds of randomness
-	})
-	mainCollector.SetRequestTimeout(30 * time.Second) // Set a timeout for requests
+	for {
+		fmt.Println("load page deepth : ",deepth)
+		err = chromedp.Run(ctx,
+			chromedp.Evaluate(`document.body.scrollHeight`, &newHeight),
+		)
 
-	mainCollector.OnError(func(r *colly.Response, err error) {
-		if r.StatusCode == http.StatusTooManyRequests { // Too Many Requests
-			fmt.Println("Rate limit hit, waiting and retrying...")
-			time.Sleep(2 * time.Second) // Wait before retrying
-			r.Request.Retry()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		if newHeight == lastHeight {
+			fmt.Println("No more content to load.")
+			break
+		}
+
+		lastHeight = newHeight
+
+		var buttonExists bool
+		err = chromedp.Run(ctx,
+			// This evaluates whether the button is visible on the page
+			chromedp.Evaluate(`document.querySelector('.post-list__load-more-btn-be092') !== null`, &buttonExists),
+		)
+		if err != nil {
+			log.Fatal(err)
+		}
+		
+		if buttonExists {
+			err = chromedp.Run(ctx,
+				chromedp.Click(".post-list__load-more-btn-be092", chromedp.ByQuery),
+				chromedp.Sleep(500*time.Millisecond), // Wait for ads to load
+			)
+			fmt.Println("click load more")
 		} else {
-			fmt.Printf("Request to %s failed: %v\n", r.Request.URL, err)
+			err = chromedp.Run(ctx,
+				chromedp.Evaluate(`window.scrollTo(0, document.body.scrollHeight)`, nil),
+				chromedp.Sleep(500*time.Millisecond),
+			)
+		}
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		var html string
+		err = chromedp.Run(ctx, chromedp.OuterHTML("html", &html))
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		allHTMLContent.WriteString(html)
+		deepth++
+		if deepth == max_deepth {
+			break
+		}
+	}
+
+	doc, err := goquery.NewDocumentFromReader(strings.NewReader(allHTMLContent.String()))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	count := 0
+	doc.Find("a.kt-post-card__action").Each(func(i int, s *goquery.Selection) {
+		href, exists := s.Attr("href")
+		if exists {
+			fmt.Println("Link: ", href)
+			count++
+		} else {
+			fmt.Println("No href found in h1 link.")
 		}
 	})
-	subCollector := mainCollector.Clone()
-	// On every <a> element with the class "kt-post-card__action", visit the link
-	mainCollector.OnHTML("a.kt-post-card__action", func(e *colly.HTMLElement) {
-		link := e.Attr("href")
-		subLink := fmt.Sprintf("https://divar.ir%s", link)
-		subCollector.Visit(subLink)
-	})
+	fmt.Println("total :", count)
 
-	// Logging request URLs for mainCollector
-	mainCollector.OnRequest(func(r *colly.Request) {
-		r.Headers.Set("User-Agent", userAgents[rand.Intn(len(userAgents))])
-		fmt.Println("Visiting main page:", r.URL.String())
-	})
+}
 
-	// Extract and print information from the ad pages using subCollector
-	subCollector.OnHTML("div.kt-page-title", func(e *colly.HTMLElement) {
-		fmt.Println("Ad Title:", e.Text)
-	})
+func CrawlDivarAds2(url string) {
+	ctx, cancel := chromedp.NewContext(context.Background())
+	defer cancel()
 
-	// Error handling for both collectors
-	mainCollector.OnError(func(r *colly.Response, err error) {
-		log.Println("Error on main page:", r.Request.URL, err)
-	})
-	subCollector.OnError(func(r *colly.Response, err error) {
-		log.Println("Error on ad page:", r.Request.URL, err)
-	})
+	ctx, cancel = context.WithTimeout(ctx, 100*time.Second)
+	defer cancel()
 
-	// Start the crawl with the main URL
-	if err := mainCollector.Visit(url); err != nil {
-		log.Fatal("Failed to visit URL:", err)
+	var allHTMLContent strings.Builder
+
+	// Navigate to the URL
+	err := chromedp.Run(ctx,
+		chromedp.Navigate(url),
+	)
+	if err != nil {
+		log.Fatal(err)
 	}
+
+	for {
+		// Click the "Load More" button if it exists
+		err = chromedp.Run(ctx,
+			chromedp.Click(`button[data-virtuoso-scroller="true"]`, chromedp.NodeVisible),
+			chromedp.Sleep(2*time.Second), // Wait for new ads to load
+		)
+		if err != nil {
+			// If the button is no longer found, break the loop
+			fmt.Println("No more 'Load More' button or failed to click.")
+			break
+		}
+
+		// Capture the updated HTML content
+		var html string
+		err = chromedp.Run(ctx, chromedp.OuterHTML("html", &html))
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		allHTMLContent.WriteString(html)
+	}
+
+	// Parse the combined HTML content with goquery
+	doc, err := goquery.NewDocumentFromReader(strings.NewReader(allHTMLContent.String()))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Extract the ad links
+	count := 0
+	doc.Find("a.kt-post-card__action").Each(func(i int, s *goquery.Selection) {
+		href, exists := s.Attr("href")
+		if exists {
+			fmt.Println("Link: ", href)
+			count++
+		} else {
+			fmt.Println("No href found in link.")
+		}
+	})
+	fmt.Println("Total ads found:", count)
 }
