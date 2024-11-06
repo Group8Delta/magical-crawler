@@ -33,7 +33,7 @@ func NewBot(config BotConfig) (*Bot, error) {
 
 func (b *Bot) StartBot() {
 	log.Print("Bot is running !")
-	b.bot.Handle("/start", StartHandler)
-	b.bot.Handle(config.FiltersButton, FilterHandlers)
+	b.bot.Handle("/start", StartHandler(b))
+	b.bot.Handle(config.FiltersButton, FilterHandlers(b))
 	b.bot.Start()
 }
