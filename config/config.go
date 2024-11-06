@@ -26,6 +26,7 @@ type Config struct {
 	DatabaseMaxIdleConns    int           `mapstructure:"DATABASE_MAX_IDLE_CONNS"`
 	DatabaseMaxOpenConns    int           `mapstructure:"DATABASE_MAX_OPEN_CONNS"`
 	DatabaseConnMaxLifetime time.Duration `mapstructure:"DATABASE_CONN_MAX_LIFETIME"`
+	BotToken                string        `mapstructure:"BOT_TOKEN"`
 	Port                    string        `mapstructure:"PORT"`
 }
 
