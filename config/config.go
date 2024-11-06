@@ -1,7 +1,11 @@
 package config
 
 import (
+	"fmt"
 	"log"
+	"os"
+	"path/filepath"
+	"runtime"
 	"time"
 
 	"sync"
@@ -23,19 +27,58 @@ type Config struct {
 	DatabaseMaxOpenConns    int           `mapstructure:"DATABASE_MAX_OPEN_CONNS"`
 	DatabaseConnMaxLifetime time.Duration `mapstructure:"DATABASE_CONN_MAX_LIFETIME"`
 	BotToken                string        `mapstructure:"BOT_TOKEN"`
+	Port                    string        `mapstructure:"PORT"`
 }
 
 func loadEnvConfig() (*viper.Viper, error) {
+	_, b, _, _ := runtime.Caller(0)
+	root := filepath.Join(filepath.Dir(b), "..")
 	v := viper.New()
-	v.SetConfigFile("../../.env")
-	v.AutomaticEnv()
+	if os.Getenv("DOCKER-DEPLOY") == "" {
+		v.SetConfigFile(filepath.Join(root, ".env"))
+		v.AutomaticEnv()
 
-	err := v.ReadInConfig()
-	if err != nil {
-		log.Printf("Unable to read .env file: %v", err)
-		return nil, err
+		if err := v.ReadInConfig(); err != nil {
+			return nil, fmt.Errorf("failed to read config file: %w", err)
+		}
+	} else {
+		bindEnvVars(v)
 	}
+
+	// Optional: Check if required variables are set and return an error if any are missing
+	missingVars := checkRequiredVars(v, []string{
+		"DATABASE_HOST", "DATABASE_PORT", "DATABASE_USER", "DATABASE_PASSWORD",
+		"DATABASE_NAME", "DATABASE_SSLMODE", "DATABASE_MAX_IDLE_CONNS",
+		"DATABASE_MAX_OPEN_CONNS", "DATABASE_CONN_MAX_LIFETIME", "PORT",
+	})
+	if len(missingVars) > 0 {
+		return nil, fmt.Errorf("missing required environment variables: %v", missingVars)
+	}
+
 	return v, nil
+}
+
+func bindEnvVars(v *viper.Viper) {
+	v.BindEnv("DATABASE_HOST")
+	v.BindEnv("DATABASE_PORT")
+	v.BindEnv("DATABASE_USER")
+	v.BindEnv("DATABASE_PASSWORD")
+	v.BindEnv("DATABASE_NAME")
+	v.BindEnv("DATABASE_SSLMODE")
+	v.BindEnv("DATABASE_MAX_IDLE_CONNS")
+	v.BindEnv("DATABASE_MAX_OPEN_CONNS")
+	v.BindEnv("DATABASE_CONN_MAX_LIFETIME")
+	v.BindEnv("PORT")
+}
+
+func checkRequiredVars(v *viper.Viper, keys []string) []string {
+	var missing []string
+	for _, key := range keys {
+		if !v.IsSet(key) {
+			missing = append(missing, key)
+		}
+	}
+	return missing
 }
 
 func parseConfig(v *viper.Viper) (*Config, error) {
