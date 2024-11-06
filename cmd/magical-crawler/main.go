@@ -2,10 +2,8 @@ package main
 
 import (
 	"fmt"
-	_ "fmt"
 	"magical-crwler/config"
 	"magical-crwler/database"
-	_ "magical-crwler/database"
 )
 
 func main() {
