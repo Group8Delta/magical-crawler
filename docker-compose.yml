@@ -1,0 +1,66 @@
+version: "3.8"
+
+volumes:
+  db_data:
+    name: db_data
+    driver: local
+
+  app_data:
+    name: app_data
+    driver: local
+
+services:
+  postgres:
+    image: postgres
+    container_name: postgres
+    hostname: postgres
+    restart: always
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_PASSWORD=${DATABASE_PASSWORD}
+      - POSTGRES_USER=${DATABASE_USER}
+      - POSTGRES_DB=${DATABASE_NAME}
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "pg_isready",
+          "-q",
+          "-d",
+          "${DATABASE_NAME}",
+          "-U",
+          "${DATABASE_USER}",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: magical-crwler
+    hostname: magical-crwler
+    restart: always
+    volumes:
+      - app_data:/var/lib/apps/data
+    environment:
+      - DATABASE_HOST=${DATABASE_HOST}
+      - DATABASE_PORT=${DATABASE_PORT}
+      - DATABASE_USER=${DATABASE_USER}
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD}
+      - DATABASE_NAME=${DATABASE_NAME}
+      - DATABASE_SSLMODE=${DATABASE_SSLMODE}
+      - DATABASE_MAX_IDLE_CONNS=${DATABASE_MAX_IDLE_CONNS}
+      - DATABASE_MAX_OPEN_CONNS=${DATABASE_MAX_OPEN_CONNS}
+      - DATABASE_CONN_MAX_LIFETIME=${DATABASE_CONN_MAX_LIFETIME}
+      - PORT=${PORT}
+      - DOCKER-DEPLOY=true
+    ports:
+      - 8080:8080
+    depends_on:
+      postgres:
+        condition: "service_healthy"
