@@ -2,6 +2,7 @@ package bot
 
 import (
 	"log"
+	"magical-crwler/config"
 	"time"
 
 	"gopkg.in/telebot.v4"
@@ -32,6 +33,7 @@ func NewBot(config BotConfig) (*Bot, error) {
 
 func (b *Bot) StartBot() {
 	log.Print("Bot is running !")
-	// Start(b)
+	b.bot.Handle("/start", StartHandler)
+	b.bot.Handle(config.FiltersButton, FilterHandlers)
 	b.bot.Start()
 }
