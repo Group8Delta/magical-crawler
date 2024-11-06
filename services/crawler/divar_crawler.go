@@ -1,4 +1,4 @@
-package services
+package crawler
 
 import (
 	"context"
@@ -11,20 +11,10 @@ import (
 	"github.com/chromedp/chromedp"
 )
 
-var userAgents = []string{
-	"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.83 Safari/537.36",
-	"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.121 Safari/537.36",
-	"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Firefox/79.0",
-	"Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:79.0) Gecko/20100101 Firefox/79.0",
-	"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_6) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Safari/605.1.15",
-	"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:80.0) Gecko/20100101 Firefox/80.0",
-	"Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Mobile/15A372 Safari/604.1",
-	"Mozilla/5.0 (Linux; Android 10; SM-G975F) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.83 Mobile Safari/537.36",
-	"Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.121 Safari/537.36",
-	"Mozilla/5.0 (iPad; CPU OS 14_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Mobile/15A5341f Safari/604.1",
+type DivarCrawler struct {
 }
 
-func CrawlDivarAds(url string) {
+func (c *DivarCrawler) CrawlAdsLinks(url string) ([]string, error) {
 	ctx, cancel := chromedp.NewContext(context.Background())
 	defer cancel()
 
@@ -41,17 +31,18 @@ func CrawlDivarAds(url string) {
 		chromedp.Navigate(url),
 	)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
 	for {
-		fmt.Println("load page deepth : ",deepth)
+		fmt.Println("load page deepth : ", deepth)
 		err = chromedp.Run(ctx,
 			chromedp.Evaluate(`document.body.scrollHeight`, &newHeight),
 		)
 
 		if err != nil {
-			log.Fatal(err)
+			log.Println(err)
+			continue
 		}
 
 		if newHeight == lastHeight {
@@ -67,9 +58,10 @@ func CrawlDivarAds(url string) {
 			chromedp.Evaluate(`document.querySelector('.post-list__load-more-btn-be092') !== null`, &buttonExists),
 		)
 		if err != nil {
-			log.Fatal(err)
+			log.Println(err)
+			continue
 		}
-		
+
 		if buttonExists {
 			err = chromedp.Run(ctx,
 				chromedp.Click(".post-list__load-more-btn-be092", chromedp.ByQuery),
@@ -84,13 +76,15 @@ func CrawlDivarAds(url string) {
 		}
 
 		if err != nil {
-			log.Fatal(err)
+			log.Println(err)
+			continue
 		}
 
 		var html string
 		err = chromedp.Run(ctx, chromedp.OuterHTML("html", &html))
 		if err != nil {
-			log.Fatal(err)
+			log.Println(err)
+			continue
 		}
 
 		allHTMLContent.WriteString(html)
@@ -102,20 +96,21 @@ func CrawlDivarAds(url string) {
 
 	doc, err := goquery.NewDocumentFromReader(strings.NewReader(allHTMLContent.String()))
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
-	count := 0
+	links := []string{}
 	doc.Find("a.kt-post-card__action").Each(func(i int, s *goquery.Selection) {
 		href, exists := s.Attr("href")
 		if exists {
-			fmt.Println("Link: ", href)
-			count++
+			links = append(links, href)
 		} else {
 			fmt.Println("No href found in h1 link.")
 		}
 	})
-	fmt.Println("total :", count)
-
+	return links, nil
 }
 
+func (c *DivarCrawler) CrawlPageUrl(pageUrl string) (interface{}, error) {
+	return nil, nil
+}
