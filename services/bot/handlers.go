@@ -18,8 +18,8 @@ func StartHandler(ctx telebot.Context) error {
 		menu.Row(filterBtn),
 	)
 
-	user := NewUser(*ctx.Sender())
-	log.Printf("%s %s | %d started bot", user.info.FirstName, user.info.LastName, user.info.ID)
+	user := ctx.Sender()
+	log.Printf("%s %s | %d started bot", user.FirstName, user.LastName, user.ID)
 
 	return ctx.Send(config.WelcomeMsg, menu)
 }
