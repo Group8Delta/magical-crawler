@@ -2,7 +2,7 @@ package bot
 
 import "gopkg.in/telebot.v4"
 
-func menuHandler(b *Bot) func(c telebot.Context) error {
+func MenuHandler(b *Bot) func(c telebot.Context) error {
 	return func(c telebot.Context) error {
 		menu := &telebot.ReplyMarkup{ResizeKeyboard: true}
 
