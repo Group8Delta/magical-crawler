@@ -22,6 +22,14 @@ func main() {
 	if err != nil {
 		fmt.Println("database connection error", err)
 	}
-
+  // I commented on this part because it needs a VPN to run 
+	// bot, err := bot.NewBot(bot.BotConfig{
+	// 	Token:  config.BotToken,
+	// 	Poller: 10 * time.Second,
+	// })
+	// if err != nil {
+	// 	log.Println(err.Error())
+	// }
+	// bot.StartBot()
 	http.ListenAndServe(":"+config.Port, nil)
 }
