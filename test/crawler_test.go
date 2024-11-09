@@ -1,9 +1,22 @@
 package test
 
 import (
+	"fmt"
 	"magical-crwler/services/crawler"
 	"testing"
 )
+
+func TestWorkerPool(t *testing.T) {
+	url := "https://divar.ir/s/zanjan/buy-residential"
+	c, err := crawler.New(crawler.DivarCrawlerType)
+	wp := crawler.NewWorkerPool(url, 2, c)
+	if err != nil {
+		t.Fatalf("initial crawler error: %v", err)
+	}
+	wp.Start()
+	results := wp.GetResults()
+	fmt.Println(len(results))
+}
 
 func TestDivarCrawler(t *testing.T) {
 	url := "https://divar.ir/s/zanjan/buy-residential"
