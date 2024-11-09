@@ -6,6 +6,8 @@ const (
 	SearchButton            = "جستجو"
 	FiltersButton           = "فیلتر های منتخب"
 	FavoritesButton         = "لیست علاقه‌مندی ها"
+	FiltersButton           = "فیلتر ها"
+	BookmarkButton          = "لیست علاقه‌مندی ها"
 	ExportButton            = "خروجی فایل"
 	AccountManagementButton = "مدیریت حساب"
 	AdminPanelButton        = "پنل ادمین"
@@ -200,9 +202,9 @@ const (
 
 // Search Results Menu
 const (
-	SaveToFavoritesButton = "ذخیره در علاقه‌مندی‌ها"
-	ViewDetailsButton     = "نمایش جزئیات"
-	BackToSearchButton    = "بازگشت به جستجو"
+	SaveToBookmarkButton = "ذخیره در علاقه‌مندی‌ها"
+	ViewDetailsButton    = "نمایش جزئیات"
+	BackToSearchButton   = "بازگشت به جستجو"
 )
 
 // Export Menu
