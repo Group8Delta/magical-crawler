@@ -1,6 +1,5 @@
-package config
+package constants
 
-// Bot
 // Main Menu
 const (
 	MainMenu                = "منوی اصلی"
