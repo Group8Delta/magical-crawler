@@ -3,6 +3,7 @@ package bot
 import (
 	"fmt"
 	"log"
+	"magical-crwler/config"
 	"magical-crwler/constants"
 	"magical-crwler/database"
 	"magical-crwler/models"
@@ -97,6 +98,7 @@ func (b *Bot) RegisterHandlers(db database.DbService) {
 	b.Bot.Handle(constants.PopularSingleFiltersButton, PopularSingleFiltersHandler(b, db))
 	b.Bot.Handle(constants.PopularFiltersButton, PopularFiltersHandler(b, db))
 	b.Bot.Handle(constants.FiltersButton, WatchListHandler(b, db))
+	b.bot.Handle(config.BookmarkButton, BookmarkHandler(b))
 
 }
 
