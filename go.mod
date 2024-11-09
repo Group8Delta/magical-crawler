@@ -14,6 +14,8 @@ require (
 	gorm.io/gorm v1.25.12
 )
 
+require github.com/DATA-DOG/go-sqlmock v1.5.2 // indirect
+
 require (
 	github.com/andybalholm/cascadia v1.2.0 // indirect
 	github.com/chromedp/sysutil v1.1.0 // indirect
