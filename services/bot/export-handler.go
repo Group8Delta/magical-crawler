@@ -2,8 +2,10 @@ package bot
 
 import (
 	"encoding/csv"
+	"fmt"
 	"os"
 
+	"github.com/xuri/excelize/v2"
 	"gopkg.in/telebot.v4"
 )
 
@@ -23,32 +25,39 @@ func ExportHandler(b *Bot) func(c telebot.Context) error {
 	}
 }
 
-func exportToCsv(data map[string]string, filename string) error {
-
-	file, err := os.Create(filename)
+func ExportToCSV(data []map[string]string, fileName string) error {
+	file, err := os.Create(fileName)
 	if err != nil {
 		return err
 	}
-
 	defer file.Close()
 
 	writer := csv.NewWriter(file)
 	defer writer.Flush()
 
-	headers := []string{
-		"شهر",
-		"قیمت",
-		"محله",
-		"متراژ",
-		"اتاق",
-		"سن بنا",
-		"نوع خونه",
-		"طبقه",
-		"انباری",
-		"آسانسور",
-		"تاریخ",
-	}
+	headers := []string{"Price", "Occupancy"} //bayad hame data haro namayesh bede
 	writer.Write(headers)
+
+	for _, item := range data {
+		row := []string{item["price"], item["occupancy"]}
+		writer.Write(row)
+	}
+
 	return nil
 
+}
+
+func ExportToXLSX(data []map[string]string, fileName string) error {
+	file := excelize.NewFile()
+	sheet := "Sheet1"
+
+	file.SetCellValue(sheet, "A1", "Price")
+	file.SetCellValue(sheet, "B1", "Occupancy")
+
+	for i, item := range data {
+		file.SetCellValue(sheet, fmt.Sprintf("A%d", i+2), item["price"])
+		file.SetCellValue(sheet, fmt.Sprintf("B%d", i+2), item["occupancy"])
+	}
+
+	return file.SaveAs(fileName)
 }
