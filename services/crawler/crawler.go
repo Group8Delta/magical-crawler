@@ -1,6 +1,9 @@
 package crawler
 
-import "errors"
+import (
+	"errors"
+	"magical-crwler/config"
+)
 
 type CrawlerType string
 
@@ -11,15 +14,15 @@ const (
 
 type CrawlerInterface interface {
 	CrawlAdsLinks(searchUrl string) ([]string, error)
-	CrawlPageUrl(pageUrl string) (interface{}, error)
+	CrawlPageUrl(pageUrl string) (*Ad, error)
 }
 
-func New(crawlerType CrawlerType) (CrawlerInterface, error) {
+func New(crawlerType CrawlerType, config *config.Config) (CrawlerInterface, error) {
 	switch crawlerType {
 	case DivarCrawlerType:
-		return &DivarCrawler{}, nil
+		return &DivarCrawler{config: config}, nil
 	case SheypoorCrawlerType:
-		return &SheypoorCrawler{}, nil
+		return &SheypoorCrawler{config: config}, nil
 	default:
 		return nil, errors.New("invalid crawler type")
 	}

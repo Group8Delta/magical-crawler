@@ -23,7 +23,7 @@ type Task struct {
 
 type Result struct {
 	error error
-	ad    Ad
+	ad    *Ad
 }
 
 // Dispatcher: enqueues tasks into the jobs queue and starts the workers.
@@ -60,7 +60,11 @@ func (wp *WorkerPoll) worker(id int, wg *sync.WaitGroup) {
 // ResultsCollector: collects results of crawling pages
 func (wp *WorkerPoll) resultsCollector(done chan bool) {
 	for result := range wp.resultsQueue {
-		wp.results = append(wp.results, result)
+		if result.error != nil {
+			wp.errors = append(wp.errors, result)
+		} else {
+			wp.results = append(wp.results, result)
+		}
 	}
 	done <- true // Signal that result collection is complete
 }
@@ -97,4 +101,8 @@ func NewWorkerPool(mainLink string, numWorkers int, crawler CrawlerInterface) *W
 
 func (wp WorkerPoll) GetResults() []Result {
 	return wp.results
+}
+
+func (wp WorkerPoll) GetErrors() []Result {
+	return wp.errors
 }

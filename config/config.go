@@ -27,6 +27,8 @@ type Config struct {
 	DatabaseMaxOpenConns    int           `mapstructure:"DATABASE_MAX_OPEN_CONNS"`
 	DatabaseConnMaxLifetime time.Duration `mapstructure:"DATABASE_CONN_MAX_LIFETIME"`
 	Port                    string        `mapstructure:"PORT"`
+	SheypoorToken           string        `mapstructure:"SHEYPOOR_TOKEN"`
+	DivarToken              string        `mapstructure:"DIVAR_TOKEN"`
 }
 
 func loadEnvConfig() (*viper.Viper, error) {
@@ -68,6 +70,9 @@ func bindEnvVars(v *viper.Viper) {
 	v.BindEnv("DATABASE_MAX_OPEN_CONNS")
 	v.BindEnv("DATABASE_CONN_MAX_LIFETIME")
 	v.BindEnv("PORT")
+	v.BindEnv("SHEYPOOR_TOKEN")
+	v.BindEnv("DIVAR_TOKEN")
+
 }
 
 func checkRequiredVars(v *viper.Viper, keys []string) []string {
