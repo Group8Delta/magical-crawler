@@ -1,23 +1,40 @@
 package test
 
 import (
+	// "magical-crwler/config"
 	"magical-crwler/config"
 	"magical-crwler/database"
+	"magical-crwler/services/crawler"
 	"os"
 	"testing"
 )
 
 var testDbService database.DbService
+var testDivarCrawler crawler.CrawlerInterface
+var testSheypoorCrawler crawler.CrawlerInterface
 
 func TestMain(m *testing.M) {
 	testDbService = database.New()
 	config := config.GetConfig()
-	err := testDbService.Init(config)
-	if err != nil {
-		panic("Failed to connect to database: " + err.Error())
-	}
+	// err := testDbService.Init(config)
+	// if err != nil {
+	// 	panic("Failed to connect to database: " + err.Error())
+	// }
 
-	defer testDbService.Close()
+	// defer testDbService.Close()
+
+	divarCrawler, err := crawler.New(crawler.DivarCrawlerType, config,1)
+	if err != nil {
+		panic("Failed to initial divar Crawler: " + err.Error())
+	}
+	testDivarCrawler = divarCrawler
+
+	sheypoorCrawler, err := crawler.New(crawler.SheypoorCrawlerType, config,1)
+	if err != nil {
+		panic("Failed to initial sheypoor Crawler: " + err.Error())
+	}
+	testSheypoorCrawler = sheypoorCrawler
+
 	code := m.Run()
 
 	os.Exit(code)
