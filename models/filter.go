@@ -1,22 +1,25 @@
 package models
 
-import "time"
+import (
+	"gorm.io/gorm"
+	"time"
+)
 
 type Filter struct {
-	ID                uint
+	gorm.Model
+	//ID                uint
 	SearchQuery       *string
 	PriceRange        *Range `gorm:"type:json"`
 	RentPriceRange    *Range `gorm:"type:json"`
 	ForRent           bool
 	City              *string
 	Neighborhood      *string
-	SizeRange         *Range `gorm:"type:json"`
-	BedroomRange      *Range `gorm:"type:json"`
-	FloorRange        *Range `gorm:"type:json"`
-	FilterRange       *Range `gorm:"type:json"`
+	SizeRange         *Range `gorm:"embedded"`
+	BedroomRange      *Range `gorm:"embedded"`
+	FloorRange        *Range `gorm:"embedded"`
 	HasElevator       *bool
 	HasStorage        *bool
-	AgeRange          *Range `gorm:"type:json"`
+	AgeRange          *Range `gorm:"embedded"`
 	IsApartment       *bool
 	CreationTimeRange *TimeRange
 }
