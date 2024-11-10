@@ -2,7 +2,7 @@ package bot
 
 import (
 	"log"
-	"magical-crwler/config"
+	"magical-crwler/constants"
 
 	"gopkg.in/telebot.v4"
 )
@@ -15,11 +15,11 @@ func StartHandler(b *Bot) func(ctx telebot.Context) error {
 		var (
 			menu = &telebot.ReplyMarkup{ResizeKeyboard: true}
 
-			searchBtn   = menu.Text(config.SearchButton)
-			filtersBtn  = menu.Text(config.FiltersButton)
-			accountBtn  = menu.Text(config.AccountManagementButton)
-			exportBtn   = menu.Text(config.ExportButton)
-			bookmarkBtn = menu.Text(config.FavoritesButton)
+			searchBtn   = menu.Text(constants.SearchButton)
+			filtersBtn  = menu.Text(constants.FiltersButton)
+			accountBtn  = menu.Text(constants.AccountManagementButton)
+			exportBtn   = menu.Text(constants.ExportButton)
+			bookmarkBtn = menu.Text(constants.FavoritesButton)
 		)
 
 		menu.Reply(
@@ -28,6 +28,6 @@ func StartHandler(b *Bot) func(ctx telebot.Context) error {
 			menu.Row(accountBtn),
 		)
 
-		return ctx.Send(config.WelcomeMsg, menu)
+		return ctx.Send(constants.WelcomeMsg, menu)
 	}
 }

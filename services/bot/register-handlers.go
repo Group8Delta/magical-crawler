@@ -1,9 +1,9 @@
 package bot
 
-import "magical-crwler/config"
+import "magical-crwler/constants"
 
-func RegisterHanlders(b *Bot) {
+func RegisterHandlers(b *Bot) {
 	b.bot.Handle("/start", StartHandler(b))
-	b.bot.Handle(config.SearchButton, FilterHandlers(b))
+	b.bot.Handle(constants.SearchButton, FilterHandlers(b))
 	b.bot.Handle("/exportFile", ExportHandler(b))
 }
