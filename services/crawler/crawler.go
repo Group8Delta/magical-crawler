@@ -17,12 +17,12 @@ type CrawlerInterface interface {
 	CrawlPageUrl(pageUrl string) (*Ad, error)
 }
 
-func New(crawlerType CrawlerType, config *config.Config) (CrawlerInterface, error) {
+func New(crawlerType CrawlerType, config *config.Config,maxDeepth int) (CrawlerInterface, error) {
 	switch crawlerType {
 	case DivarCrawlerType:
-		return &DivarCrawler{config: config}, nil
+		return &DivarCrawler{config: config,maxDeepth: maxDeepth}, nil
 	case SheypoorCrawlerType:
-		return &SheypoorCrawler{config: config}, nil
+		return &SheypoorCrawler{config: config,maxDeepth: maxDeepth}, nil
 	default:
 		return nil, errors.New("invalid crawler type")
 	}

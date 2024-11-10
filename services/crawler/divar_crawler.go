@@ -19,6 +19,7 @@ import (
 
 type DivarCrawler struct {
 	config *config.Config
+	maxDeepth int
 }
 
 func (c *DivarCrawler) CrawlAdsLinks(url string) ([]string, error) {
@@ -27,10 +28,7 @@ func (c *DivarCrawler) CrawlAdsLinks(url string) ([]string, error) {
 
 	ctx, cancel = context.WithTimeout(ctx, 100*time.Second)
 	defer cancel()
-
-	max_deepth := 40
 	deepth := 0
-
 	var lastHeight, newHeight int64
 	var allHTMLContent strings.Builder
 
@@ -96,7 +94,7 @@ func (c *DivarCrawler) CrawlAdsLinks(url string) ([]string, error) {
 
 		allHTMLContent.WriteString(html)
 		deepth++
-		if deepth == max_deepth {
+		if deepth == c.maxDeepth {
 			break
 		}
 	}

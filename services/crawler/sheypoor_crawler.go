@@ -29,6 +29,7 @@ type SheypoorContractResponse struct {
 
 type SheypoorCrawler struct {
 	config *config.Config
+	maxDeepth int
 }
 
 func (c *SheypoorCrawler) CrawlAdsLinks(url string) ([]string, error) {
@@ -38,8 +39,6 @@ func (c *SheypoorCrawler) CrawlAdsLinks(url string) ([]string, error) {
 
 	ctx, cancel = context.WithTimeout(ctx, 100*time.Second)
 	defer cancel()
-
-	max_deepth := 40
 	deepth := 0
 
 	var lastHeight, newHeight int64
@@ -89,7 +88,7 @@ func (c *SheypoorCrawler) CrawlAdsLinks(url string) ([]string, error) {
 
 		allHTMLContent.WriteString(html)
 		deepth++
-		if deepth == max_deepth {
+		if deepth == c.maxDeepth {
 			break
 		}
 	}

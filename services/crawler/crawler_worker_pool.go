@@ -3,6 +3,7 @@ package crawler
 import (
 	"log"
 	"sync"
+	"time"
 )
 
 type WorkerPoll struct {
@@ -22,8 +23,9 @@ type Task struct {
 }
 
 type Result struct {
-	error error
-	ad    *Ad
+	timeSpent time.Duration
+	error     error
+	ad        *Ad
 }
 
 // Dispatcher: enqueues tasks into the jobs queue and starts the workers.
@@ -51,9 +53,11 @@ func (wp *WorkerPoll) worker(id int, wg *sync.WaitGroup) {
 	defer wg.Done()
 	for task := range wp.jobsQueue { // Process jobs from the queue
 		log.Printf("Worker %d started crawl page %s\n", id, task.Link)
-		result, error := wp.crawler.CrawlPageUrl(task.Link)
-		log.Printf("Worker %d finished crawl page %s\n", id, task.Link)
-		wp.resultsQueue <- Result{ad: result, error: error} // Send result to the collector
+		start := time.Now()
+		crawlData, error := wp.crawler.CrawlPageUrl(task.Link)
+		result := Result{ad: crawlData, error: error, timeSpent: time.Since(start)}
+		log.Printf("Worker %d finished crawl page %s, time-spennt %s\n", id, task.Link, result.timeSpent)
+		wp.resultsQueue <- result // Send result to the collector
 	}
 }
 
