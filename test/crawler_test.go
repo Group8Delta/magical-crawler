@@ -1,6 +1,7 @@
 package test
 
 import (
+	"encoding/json"
 	"fmt"
 	"magical-crwler/services/crawler"
 	"testing"
@@ -18,7 +19,9 @@ func TestWorkerPool(t *testing.T) {
 	fmt.Printf("results count:%d\n", len(results))
 	fmt.Printf("errors count:%d\n", len(errors))
 
-	fmt.Println(errors)
+	for _, v := range errors {
+		fmt.Println(v)
+	}
 
 }
 
@@ -47,7 +50,7 @@ func TestSheypoorCrawler(t *testing.T) {
 }
 
 func TestCrawlDivarPageUrl(t *testing.T) {
-	url := "https://divar.ir/v/%D8%A2%D9%BE%D8%A7%D8%B1%D8%AA%D9%85%D8%A7%D9%86-%DB%B6%DB%B8%D9%85%D8%AA%D8%B1%DB%8C-%D8%AC%D9%86%D9%88%D8%A8%DB%8C-%D8%B2%DB%8C%D8%A8%D8%A7-%D8%A8%D8%A7-%D9%85%D8%AA%D8%B1%DB%8C%D8%A7%D9%84/wZLIKFFJ"
+	url := "https://divar.ir/v/%D8%AE%D8%A7%D9%86%D9%87-%D9%88%DB%8C%D9%84%D8%A7%DB%8C%DB%8C-%D8%AF%D8%B1-%D9%86%D8%A7%D9%86%D9%88%D8%A7%DB%8C%D8%A7%D9%86-%D9%81%D8%A7%D8%B2-%DB%B2/wZw0GHOw"
 
 	ad, err := testDivarCrawler.CrawlPageUrl(url)
 
@@ -55,7 +58,11 @@ func TestCrawlDivarPageUrl(t *testing.T) {
 		t.Fatalf("crawl page url error:: %v", err)
 	}
 
-	t.Logf("result : %v", ad)
+	j, err := json.Marshal(ad)
+	if err != nil {
+		t.Fatalf("error in marashal ad: %v", err)
+	}
+	t.Logf("result :\n %v", string(j))
 }
 
 func TestCrawlSheypoorPageUrl(t *testing.T) {
@@ -67,5 +74,9 @@ func TestCrawlSheypoorPageUrl(t *testing.T) {
 		t.Fatalf("crawl page url error: %v", err)
 	}
 
-	t.Logf("result : %v", ad)
+	j, err := json.Marshal(ad)
+	if err != nil {
+		t.Fatalf("error in marashal ad: %v", err)
+	}
+	t.Logf("result :\n %v", string(j))
 }

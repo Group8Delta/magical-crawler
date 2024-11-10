@@ -112,11 +112,11 @@ func (c *SheypoorCrawler) CrawlAdsLinks(url string) ([]string, error) {
 
 func (c *SheypoorCrawler) CrawlPageUrl(pageUrl string) (*Ad, error) {
 	var ad Ad = Ad{}
-	var err error
+	var panicError error
 	defer func() {
 		if r := recover(); r != nil {
 			// Recover from panic and set err to indicate the panic message
-			err = fmt.Errorf("recovered from panic in CrawlPageUrl: %v", r)
+			panicError = fmt.Errorf("recovered from panic in CrawlPageUrl: %v", r)
 		}
 	}()
 	// Create a new context for Chrome
@@ -151,7 +151,7 @@ func (c *SheypoorCrawler) CrawlPageUrl(pageUrl string) (*Ad, error) {
 
 	var attributes string
 
-	err = chromedp.Run(ctx,
+	err := chromedp.Run(ctx,
 		chromedp.Navigate(pageUrl),
 		chromedp.Sleep(500*time.Microsecond),
 		chromedp.Text(`h1[class*="mjNIv"]`, &Title, chromedp.NodeVisible),
@@ -176,13 +176,12 @@ func (c *SheypoorCrawler) CrawlPageUrl(pageUrl string) (*Ad, error) {
 		chromedp.Text(`div.bWPjU`, &attributes, chromedp.NodeVisible),
 	)
 
-	CreationTime = strings.Split(City, "،")[0]
-	Neighborhood = strings.Split(City, "،")[2]
-	City = strings.Split(City, "،")[1]
-
 	if err != nil {
 		return nil, err
 	}
+	CreationTime = strings.Split(City, "،")[0]
+	Neighborhood = strings.Split(City, "،")[2]
+	City = strings.Split(City, "،")[1]
 
 	for k, v := range strings.Split(attributes, "\n") {
 		if strings.Contains(v, "متراژ") {
@@ -224,7 +223,7 @@ func (c *SheypoorCrawler) CrawlPageUrl(pageUrl string) (*Ad, error) {
 	id := strings.Trim(strings.Split(Link, "-")[len(strings.Split(Link, "-"))-1], ".html")
 	SellerContact, err = c.getSellerPhone(id)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("error in getSellerPhone", err)
 	}
 	ad.Title = Title
 	ad.Link = Link
@@ -234,13 +233,13 @@ func (c *SheypoorCrawler) CrawlPageUrl(pageUrl string) (*Ad, error) {
 	ad.Neighborhood = strings.Trim(Neighborhood, " ")
 	size, err := utils.PersianToEnglishDigits(Size)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("invalid size")
 	}
 	ad.Size = uint(size)
 
 	bedrooms, err := utils.PersianToEnglishDigits(Bedrooms)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("invalid bedrooms")
 	}
 	ad.Bedrooms = uint(bedrooms)
 	ad.Floor = uint(Floor)
@@ -257,28 +256,28 @@ func (c *SheypoorCrawler) CrawlPageUrl(pageUrl string) (*Ad, error) {
 	RentPrice = strings.Trim(RentPrice, " تومان")
 	pr, err := utils.PersianToEnglishDigits(Price)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("invalid price")
 	}
 	ad.Price = uint(pr)
 
 	rpr, err := utils.PersianToEnglishDigits(RentPrice)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("invalid RentPrice")
 	}
 	ad.RentPrice = uint(rpr)
 
 	BuiltYear = strings.Trim(BuiltYear, "سال ")
 	builtYear, err := utils.PersianToEnglishDigits(BuiltYear)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("invalid builtYear")
 	}
 	ad.BuiltYear = uint(CurrentYear - builtYear)
 	cr, err := utils.ParsePersianDate(strings.Trim(CreationTime, " "))
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("invalid CreationTime")
 	}
 	ad.CreationTime = cr
-	return &ad, err
+	return &ad, panicError
 }
 
 func (c *SheypoorCrawler) getSellerPhone(id string) (string, error) {

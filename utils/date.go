@@ -50,7 +50,7 @@ func ParsePersianDate(phrase string) (time.Time, error) {
 	case yearRegex.MatchString(phrase):
 		t = parseTimeAgo(yearRegex, phrase, now, "year")
 	default:
-		return now, fmt.Errorf("unrecognized phrase")
+		return now, fmt.Errorf("unrecognized date phrase")
 	}
 
 	return t, nil

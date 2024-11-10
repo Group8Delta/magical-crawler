@@ -8,6 +8,8 @@ import (
 )
 
 func PersianToEnglishDigits(persianNum string) (int, error) {
+
+	persianNum = strings.Trim(persianNum, " ")
 	// Mapping of Persian digits to English digits
 	persianToEnglish := map[rune]rune{
 		'۰': '0', '۱': '1', '۲': '2', '۳': '3', '۴': '4',

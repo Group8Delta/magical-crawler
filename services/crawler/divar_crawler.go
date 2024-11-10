@@ -18,7 +18,7 @@ import (
 )
 
 type DivarCrawler struct {
-	config *config.Config
+	config    *config.Config
 	maxDeepth int
 }
 
@@ -118,11 +118,11 @@ func (c *DivarCrawler) CrawlAdsLinks(url string) ([]string, error) {
 
 func (c *DivarCrawler) CrawlPageUrl(pageUrl string) (*Ad, error) {
 	var ad Ad = Ad{}
-	var err error
+	var panicErr error
 	defer func() {
 		if r := recover(); r != nil {
 			// Recover from panic and set err to indicate the panic message
-			err = fmt.Errorf("recovered from panic in CrawlPageUrl: %v", r)
+			panicErr = fmt.Errorf("recovered from panic in CrawlPageUrl: %v", r)
 		}
 	}()
 	// Create a new context for Chrome
@@ -145,9 +145,9 @@ func (c *DivarCrawler) CrawlPageUrl(pageUrl string) (*Ad, error) {
 	var Neighborhood string
 	var Size string
 	var Bedrooms string
-	var HasElevator string
-	var HasStorage string
-	var HasParking string
+	var HasElevator bool
+	var HasStorage bool
+	var HasParking bool
 	var BuiltYear string
 	var ForRent bool
 	var IsApartment string
@@ -159,10 +159,12 @@ func (c *DivarCrawler) CrawlPageUrl(pageUrl string) (*Ad, error) {
 	var Lon string
 
 	var attributes []string
+	var secondAttributes []string
+
 	var details []string
 	var categories []string
 
-	err = chromedp.Run(ctx,
+	err := chromedp.Run(ctx,
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			expiryTime := cdp.TimeSinceEpoch(time.Now().Add(24 * time.Hour))
 			return network.SetCookie("token", c.config.DivarToken).
@@ -174,52 +176,157 @@ func (c *DivarCrawler) CrawlPageUrl(pageUrl string) (*Ad, error) {
 
 		chromedp.Navigate(pageUrl),
 		chromedp.Sleep(500*time.Millisecond),
-		chromedp.Click(`button.kt-button.kt-button--primary.post-actions__get-contact`, chromedp.NodeVisible),
-		chromedp.Sleep(500*time.Millisecond),
-
-		chromedp.Text(`h1[class*="kt-page-title__title kt-page-title__title--responsive-sized"]`, &Title, chromedp.NodeVisible),
-
-		chromedp.Text(`div[class*="kt-page-title__subtitle kt-page-title__subtitle--responsive-sized"]`, &CreationTime, chromedp.NodeVisible),
-		chromedp.Text(`p[class*="kt-description-row__text kt-description-row__text--primary"]`, &Description, chromedp.NodeVisible),
-
-		chromedp.AttributeValue(`img.kt-image-block__image.kt-image-block__image--fading`, "src", &PhotoUrl, nil),
 
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			var nodes []*cdp.Node
-			err := chromedp.Run(ctx,
-				chromedp.Nodes(`a.map-cm__attribution.map-cm__button`, &nodes, chromedp.AtLeast(0)),
-			)
-			if err != nil {
-				return err
+			err := chromedp.Run(ctx, chromedp.Nodes(`button.kt-button.kt-button--primary.post-actions__get-contact`, &nodes, chromedp.AtLeast(0)))
+			if err == nil && len(nodes) > 0 {
+				return chromedp.Click(`button.kt-button.kt-button--primary.post-actions__get-contact`, chromedp.NodeVisible).Do(ctx)
 			}
+			return nil // Ignore if element is not found
+		}),
 
-			if len(nodes) > 0 {
-				return chromedp.AttributeValue(`a.map-cm__attribution.map-cm__button`, "href", &mapUrl, nil).Do(ctx)
+		chromedp.Sleep(500*time.Millisecond),
+
+		chromedp.ActionFunc(func(ctx context.Context) error {
+			var nodes []*cdp.Node
+			err := chromedp.Run(ctx, chromedp.Nodes(`h1[class*="kt-page-title__title kt-page-title__title--responsive-sized"]`, &nodes, chromedp.AtLeast(0)))
+			if err == nil && len(nodes) > 0 {
+				return chromedp.Text(`h1[class*="kt-page-title__title kt-page-title__title--responsive-sized"]`, &Title, chromedp.NodeVisible).Do(ctx)
 			}
-
 			return nil
 		}),
 
-		chromedp.Evaluate(`Array.from(document.querySelectorAll(".kt-group-row__data-row")).map(el => el.innerText)`, &attributes),
-		chromedp.Text(`a.kt-unexpandable-row__action.kt-text-truncate`, &SellerContact, chromedp.NodeVisible),
-		chromedp.Evaluate(`Array.from(document.querySelectorAll("p.kt-unexpandable-row__value")).map(el => el.innerText)`, &details),
-		chromedp.Evaluate(`Array.from(document.querySelectorAll("span.kt-breadcrumbs__action-text")).map(el => el.innerText)`, &categories),
+		chromedp.ActionFunc(func(ctx context.Context) error {
+			var nodes []*cdp.Node
+			err := chromedp.Run(ctx, chromedp.Nodes(`div[class*="kt-page-title__subtitle kt-page-title__subtitle--responsive-sized"]`, &nodes, chromedp.AtLeast(0)))
+			if err == nil && len(nodes) > 0 {
+				return chromedp.Text(`div[class*="kt-page-title__subtitle kt-page-title__subtitle--responsive-sized"]`, &CreationTime, chromedp.NodeVisible).Do(ctx)
+			}
+			return nil
+		}),
+
+		chromedp.ActionFunc(func(ctx context.Context) error {
+			var nodes []*cdp.Node
+			err := chromedp.Run(ctx, chromedp.Nodes(`p[class*="kt-description-row__text kt-description-row__text--primary"]`, &nodes, chromedp.AtLeast(0)))
+			if err == nil && len(nodes) > 0 {
+				return chromedp.Text(`p[class*="kt-description-row__text kt-description-row__text--primary"]`, &Description, chromedp.NodeVisible).Do(ctx)
+			}
+			return nil
+		}),
+
+		chromedp.ActionFunc(func(ctx context.Context) error {
+			var nodes []*cdp.Node
+			err := chromedp.Run(ctx, chromedp.Nodes(`img.kt-image-block__image.kt-image-block__image--fading`, &nodes, chromedp.AtLeast(0)))
+			if err == nil && len(nodes) > 0 {
+				return chromedp.AttributeValue(`img.kt-image-block__image.kt-image-block__image--fading`, "src", &PhotoUrl, nil).Do(ctx)
+			}
+			return nil
+		}),
+
+		chromedp.ActionFunc(func(ctx context.Context) error {
+			var nodes []*cdp.Node
+			err := chromedp.Run(ctx, chromedp.Nodes(`a.map-cm__attribution.map-cm__button`, &nodes, chromedp.AtLeast(0)))
+			if err == nil && len(nodes) > 0 {
+				return chromedp.AttributeValue(`a.map-cm__attribution.map-cm__button`, "href", &mapUrl, nil).Do(ctx)
+			}
+			return nil
+		}),
+
+		chromedp.ActionFunc(func(ctx context.Context) error {
+			var nodes []*cdp.Node
+			err := chromedp.Run(ctx, chromedp.Nodes(`.kt-group-row-item.kt-group-row-item__value.kt-group-row-item--info-row`, &nodes, chromedp.AtLeast(0)))
+			if err == nil && len(nodes) > 0 {
+				return chromedp.Evaluate(`Array.from(document.querySelectorAll(".kt-group-row-item.kt-group-row-item__value.kt-group-row-item--info-row")).map(el => el.innerText)`, &attributes).Do(ctx)
+			}
+			return nil
+		}),
+
+		chromedp.ActionFunc(func(ctx context.Context) error {
+			var nodes []*cdp.Node
+			err := chromedp.Run(ctx, chromedp.Nodes(`.kt-group-row-item.kt-group-row-item__value.kt-body.kt-body--stable`, &nodes, chromedp.AtLeast(0)))
+			if err == nil && len(nodes) > 0 {
+				return chromedp.Evaluate(`Array.from(document.querySelectorAll(".kt-group-row-item.kt-group-row-item__value.kt-body.kt-body--stable")).map(el => el.innerText)`, &secondAttributes).Do(ctx)
+			}
+			return nil
+		}),
+
+		chromedp.ActionFunc(func(ctx context.Context) error {
+			var nodes []*cdp.Node
+			err := chromedp.Run(ctx, chromedp.Nodes(`a.kt-unexpandable-row__action.kt-text-truncate`, &nodes, chromedp.AtLeast(0)))
+			if err == nil && len(nodes) > 0 {
+				return chromedp.Text(`a.kt-unexpandable-row__action.kt-text-truncate`, &SellerContact, chromedp.NodeVisible).Do(ctx)
+			}
+			return nil
+		}),
+
+		chromedp.ActionFunc(func(ctx context.Context) error {
+			var nodes []*cdp.Node
+			err := chromedp.Run(ctx, chromedp.Nodes(`div.kt-base-row.kt-base-row--large.kt-unexpandable-row`, &nodes, chromedp.AtLeast(0)))
+			if err == nil && len(nodes) > 0 {
+				return chromedp.Evaluate(`Array.from(document.querySelectorAll("div.kt-base-row.kt-base-row--large.kt-unexpandable-row")).map(el => el.innerText)`, &details).Do(ctx)
+			}
+			return nil
+		}),
+
+		chromedp.ActionFunc(func(ctx context.Context) error {
+			var nodes []*cdp.Node
+			err := chromedp.Run(ctx, chromedp.Nodes(`span.kt-breadcrumbs__action-text`, &nodes, chromedp.AtLeast(0)))
+			if err == nil && len(nodes) > 0 {
+				return chromedp.Evaluate(`Array.from(document.querySelectorAll("span.kt-breadcrumbs__action-text")).map(el => el.innerText)`, &categories).Do(ctx)
+			}
+			return nil
+		}),
 	)
 
 	if err != nil {
 		return nil, err
 	}
 
-	firstAttributes := strings.Split(attributes[0], "\n")
+	for _, v := range details {
+		if strings.Contains(v, "قیمت کل") {
+			Price = strings.Trim(strings.Split(v, "\n")[2], "تومان")
 
-	Size = firstAttributes[0]
-	BuiltYear = firstAttributes[1]
-	Bedrooms = firstAttributes[2]
+		}
+		if strings.Contains(v, "ودیعه") && !strings.Contains(v, "اجاره") {
+			Price = strings.Trim(strings.Split(v, "\n")[2], "تومان")
 
-	secondAttributes := strings.Split(attributes[1], "\n")
-	HasElevator = secondAttributes[0]
-	HasParking = secondAttributes[1]
-	HasStorage = secondAttributes[2]
+		}
+
+		if strings.Contains(v, "اجارهٔ ماهانه") {
+			RentPrice = strings.Trim(strings.Split(v, "\n")[2], "تومان")
+			ForRent = true
+
+		}
+		if strings.Contains(v, "طبقه") {
+			Floor = strings.Trim(strings.Split(v, "\n")[2], " ")
+			if strings.Contains(Floor, "از") {
+				Floor = strings.Split(Floor, "از")[0]
+			}
+
+		}
+	}
+
+	if len(attributes) > 0 {
+		Size = attributes[0]
+		BuiltYear = attributes[1]
+		Bedrooms = attributes[2]
+	}
+
+	if len(secondAttributes) > 0 {
+		for _, v := range secondAttributes {
+			if strings.Contains(v, "پارکینگ") && !strings.Contains(v, "ندارد") {
+				HasParking = true
+			}
+			if strings.Contains(v, "انباری") && !strings.Contains(v, "ندارد") {
+				HasStorage = true
+			}
+			if strings.Contains(v, "آسانسور") && !strings.Contains(v, "ندارد") {
+				HasElevator = true
+			}
+		}
+	}
+
 	City = strings.Split(CreationTime, "در")[1]
 	if len(strings.Split(City, "،")) > 1 {
 		Neighborhood = strings.Split(City, "،")[1]
@@ -227,25 +334,12 @@ func (c *DivarCrawler) CrawlPageUrl(pageUrl string) (*Ad, error) {
 	}
 	CreationTime = strings.Split(CreationTime, "در")[0]
 	IsApartment = categories[2]
-	Price = strings.Trim(details[0], "تومان ")
-	if strings.Contains(categories[1], "اجارهٔ") {
-		ForRent = true
-		RentPrice = strings.Trim(details[1], "تومان ")
-
-	}
-
-	if len(strings.Split(details[len(details)-1], " از")) > 1 {
-		Floor = strings.Split(details[len(details)-1], " از")[0]
-	} else {
-		Floor = details[len(details)-1]
-
-	}
 
 	if mapUrl != "" {
 
 		u, err := url.Parse(mapUrl)
 		if err != nil {
-			log.Println("Failed to parse map URL: %v", err)
+			fmt.Println("Failed to parse map URL", err)
 		}
 
 		Lat = u.Query().Get("latitude")
@@ -258,36 +352,36 @@ func (c *DivarCrawler) CrawlPageUrl(pageUrl string) (*Ad, error) {
 
 	pr, err := utils.PersianToEnglishDigits((Price))
 	if err != nil {
-		log.Printf("error in converting price : %v", err)
+		fmt.Println("invalid price ")
 	}
 	ad.Price = uint(pr)
 
 	size, err := utils.PersianToEnglishDigits((Size))
 	if err != nil {
-		log.Printf("error in converting size : %v", err)
+		fmt.Println("invalid size ")
 	}
 	ad.Size = uint(size)
 
 	buildYear, err := utils.PersianToEnglishDigits((BuiltYear))
 	if err != nil {
-		log.Printf("error in converting buildYear : %v", err)
+		fmt.Println("invalid buildYear ")
 	}
 	ad.BuiltYear = uint(buildYear)
 
 	bedrooms, err := utils.PersianToEnglishDigits((Bedrooms))
 	if err != nil {
-		log.Printf("error in converting bedrooms : %v", err)
+		fmt.Println("invalid bedrooms ")
 	}
 	ad.Bedrooms = uint(bedrooms)
 
-	cr, err := utils.ParsePersianDate(CreationTime)
+	cr, err := utils.ParsePersianDate(strings.Trim(CreationTime, " "))
 	if err != nil {
 		fmt.Println(err)
 	}
 	ad.CreationTime = cr
-	ad.HasElevator = !strings.Contains(HasElevator, "ندارد")
-	ad.HasParking = !strings.Contains(HasParking, "ندارد")
-	ad.HasStorage = !strings.Contains(HasStorage, "ندارد")
+	ad.HasElevator = HasElevator
+	ad.HasParking = HasParking
+	ad.HasStorage = HasStorage
 
 	ad.Description = Description
 	ad.City = City
@@ -298,7 +392,7 @@ func (c *DivarCrawler) CrawlPageUrl(pageUrl string) (*Ad, error) {
 
 	floor, err := utils.PersianToEnglishDigits((Floor))
 	if err != nil {
-		log.Printf("error in converting floor : %v", err)
+		fmt.Println("invalid floor ")
 	}
 	ad.Floor = uint(floor)
 
@@ -307,22 +401,22 @@ func (c *DivarCrawler) CrawlPageUrl(pageUrl string) (*Ad, error) {
 
 	rpr, err := utils.PersianToEnglishDigits((RentPrice))
 	if err != nil {
-		log.Printf("error in converting RentPrice : %v", err)
+		fmt.Println("invalid RentPrice ")
 	}
 	ad.RentPrice = uint(rpr)
 
 	lat, err := strconv.ParseFloat(Lat, 64)
 	if err != nil {
-		log.Printf("error in converting lat : %v", err)
+		fmt.Println("invalid lat ")
 	}
 	ad.Lat = float32(lat)
 
 	lon, err := strconv.ParseFloat(Lon, 64)
 	if err != nil {
-		log.Printf("error in converting Lon : %v", err)
+		fmt.Println("invalid Lon ")
 	}
 	ad.Lon = float32(lon)
 
-	return &ad, err
+	return &ad, panicErr
 
 }
