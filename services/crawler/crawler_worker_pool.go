@@ -23,9 +23,9 @@ type Task struct {
 }
 
 type Result struct {
-	timeSpent time.Duration
-	error     error
-	ad        *Ad
+	TimeSpent time.Duration
+	Err       error
+	Ad        *Ad
 }
 
 // Dispatcher: enqueues tasks into the jobs queue and starts the workers.
@@ -54,9 +54,9 @@ func (wp *WorkerPoll) worker(id int, wg *sync.WaitGroup) {
 	for task := range wp.jobsQueue { // Process jobs from the queue
 		log.Printf("Worker %d started crawl page %s\n", id, task.Link)
 		start := time.Now()
-		crawlData, error := wp.crawler.CrawlPageUrl(task.Link)
-		result := Result{ad: crawlData, error: error, timeSpent: time.Since(start)}
-		log.Printf("Worker %d finished crawl page %s, time-spennt %s\n", id, task.Link, result.timeSpent)
+		crawlData, err := wp.crawler.CrawlPageUrl(task.Link)
+		result := Result{Ad: crawlData, Err: err, TimeSpent: time.Since(start)}
+		log.Printf("Worker %d finished crawl page %s, time-spennt %s\n", id, task.Link, result.TimeSpent)
 		wp.resultsQueue <- result // Send result to the collector
 	}
 }
@@ -64,7 +64,7 @@ func (wp *WorkerPoll) worker(id int, wg *sync.WaitGroup) {
 // ResultsCollector: collects results of crawling pages
 func (wp *WorkerPoll) resultsCollector(done chan bool) {
 	for result := range wp.resultsQueue {
-		if result.error != nil {
+		if result.Err != nil {
 			wp.errors = append(wp.errors, result)
 		} else {
 			wp.results = append(wp.results, result)

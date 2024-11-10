@@ -38,7 +38,7 @@ func (c *DivarCrawler) CrawlAdsLinks(url string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-
+	chromedp.Sleep(500 * time.Millisecond)
 	for {
 		fmt.Println("load page deepth : ", deepth)
 		err = chromedp.Run(ctx,

@@ -15,12 +15,11 @@ func TestWorkerPool(t *testing.T) {
 	wp.Start()
 	results := wp.GetResults()
 	errors := wp.GetErrors()
-
 	fmt.Printf("results count:%d\n", len(results))
 	fmt.Printf("errors count:%d\n", len(errors))
 
 	for _, v := range errors {
-		fmt.Println(v)
+		fmt.Println(v.Err.Error())
 	}
 
 }
