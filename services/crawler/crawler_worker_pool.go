@@ -1,6 +1,7 @@
 package crawler
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"runtime"
@@ -27,6 +28,7 @@ type Task struct {
 type Result struct {
 	TimeSpent time.Duration
 	RAMUsage  int
+	CPUUsage  int
 	Err       error
 	Ad        *Ad
 }
@@ -41,13 +43,13 @@ func (r Result) String() string {
 }
 
 // Dispatcher: enqueues tasks into the jobs queue and starts the workers.
-func (wp *WorkerPoll) dispatcher() {
+func (wp *WorkerPoll) dispatcher(ctx context.Context) {
 	var wg sync.WaitGroup
 
 	// Start worker goroutines.
 	for i := 1; i <= wp.numWorkers; i++ {
 		wg.Add(1)
-		go wp.worker(i, &wg)
+		go wp.worker(i,ctx, &wg)
 	}
 
 	// Enqueue tasks into the jobs queue.
@@ -59,14 +61,14 @@ func (wp *WorkerPoll) dispatcher() {
 	wg.Wait()              // Wait for all workers to complete
 	close(wp.resultsQueue) // Signal no more results will be sent.
 }
-func (wp *WorkerPoll) worker(id int, wg *sync.WaitGroup) {
+func (wp *WorkerPoll) worker(id int,ctx context.Context, wg *sync.WaitGroup) {
 	defer wg.Done()
 	for task := range wp.jobsQueue { // Process jobs from the queue
 		log.Printf("Worker %d started crawl page %s\n", id, task.Link)
 		start := time.Now()
 		var memStatsStart, memStatsEnd runtime.MemStats
 		runtime.ReadMemStats(&memStatsStart)
-		crawlData, err := wp.crawler.CrawlPageUrl(task.Link)
+		crawlData, err := wp.crawler.CrawlPageUrl(ctx,task.Link)
 		runtime.ReadMemStats(&memStatsEnd)
 
 		ramUsage := 0
@@ -79,6 +81,7 @@ func (wp *WorkerPoll) worker(id int, wg *sync.WaitGroup) {
 			Err:       err,
 			TimeSpent: time.Since(start),
 			RAMUsage:  ramUsage,
+			CPUUsage:  0,
 		}
 
 		wp.resultsQueue <- result // Send result to the collector
@@ -98,9 +101,9 @@ func (wp *WorkerPoll) resultsCollector(done chan bool) {
 	done <- true // Signal that result collection is complete
 }
 
-func (wp *WorkerPoll) Start() {
+func (wp *WorkerPoll) Start(ctx context.Context) {
 	log.Printf("start worker-pool with %d worker", wp.numWorkers)
-	links, err := wp.crawler.CrawlAdsLinks(wp.mainLink)
+	links, err := wp.crawler.CrawlAdsLinks(ctx,wp.mainLink)
 	if err != nil {
 		log.Println("Error in crawl main page with crawler ", err)
 		return
@@ -110,7 +113,7 @@ func (wp *WorkerPoll) Start() {
 
 	go wp.resultsCollector(wp.done)
 	// Start the dispatcher to crawl pages and start workers
-	wp.dispatcher()
+	wp.dispatcher(ctx)
 	<-wp.done
 }
 

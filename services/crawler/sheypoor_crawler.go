@@ -3,6 +3,7 @@ package crawler
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -32,252 +33,250 @@ type SheypoorCrawler struct {
 	maxDeepth int
 }
 
-func (c *SheypoorCrawler) CrawlAdsLinks(url string) ([]string, error) {
+func (c *SheypoorCrawler) CrawlAdsLinks(ctx context.Context, url string) ([]string, error) {
 
-	ctx, cancel := chromedp.NewContext(context.Background())
-	defer cancel()
+	select {
+	case <-ctx.Done():
+		return make([]string, 0), errors.New("time-out")
+	default:
+		deepth := 0
 
-	ctx, cancel = context.WithTimeout(ctx, 100*time.Second)
-	defer cancel()
-	deepth := 0
+		var lastHeight, newHeight int64
+		var allHTMLContent strings.Builder
 
-	var lastHeight, newHeight int64
-	var allHTMLContent strings.Builder
-
-	err := chromedp.Run(ctx,
-		chromedp.Navigate(url),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	for {
-		fmt.Println("load page deepth : ", deepth)
-		err = chromedp.Run(ctx,
-			chromedp.Evaluate(`document.body.scrollHeight`, &newHeight),
+		err := chromedp.Run(ctx,
+			chromedp.Navigate(url),
 		)
-
 		if err != nil {
-			log.Println(err)
-			continue
+			return nil, err
 		}
 
-		if newHeight == lastHeight {
-			fmt.Println("No more content to load.")
-			break
+		for {
+			fmt.Println("load page deepth : ", deepth)
+			err = chromedp.Run(ctx,
+				chromedp.Evaluate(`document.body.scrollHeight`, &newHeight),
+			)
+
+			if err != nil {
+				log.Println(err)
+				continue
+			}
+
+			if newHeight == lastHeight {
+				fmt.Println("No more content to load.")
+				break
+			}
+
+			lastHeight = newHeight
+
+			err = chromedp.Run(ctx,
+				chromedp.Evaluate(`window.scrollTo(0, document.body.scrollHeight)`, nil),
+				chromedp.Sleep(500*time.Millisecond),
+			)
+
+			if err != nil {
+				log.Println(err)
+				continue
+			}
+
+			var html string
+			err = chromedp.Run(ctx, chromedp.OuterHTML("html", &html))
+			if err != nil {
+				log.Println(err)
+				continue
+			}
+
+			allHTMLContent.WriteString(html)
+			deepth++
+			if deepth == c.maxDeepth {
+				break
+			}
 		}
 
-		lastHeight = newHeight
-
-		err = chromedp.Run(ctx,
-			chromedp.Evaluate(`window.scrollTo(0, document.body.scrollHeight)`, nil),
-			chromedp.Sleep(500*time.Millisecond),
-		)
-
+		doc, err := goquery.NewDocumentFromReader(strings.NewReader(allHTMLContent.String()))
 		if err != nil {
-			log.Println(err)
-			continue
+			return nil, err
 		}
 
-		var html string
-		err = chromedp.Run(ctx, chromedp.OuterHTML("html", &html))
-		if err != nil {
-			log.Println(err)
-			continue
-		}
-
-		allHTMLContent.WriteString(html)
-		deepth++
-		if deepth == c.maxDeepth {
-			break
-		}
+		links := []string{}
+		doc.Find(`a[class="flex h-auto desktop:h-full desktop:flex-col desktop:border-b-0 desktop:pb-0 flex-row-reverse border-b-[1px] border-dark-4 pb-4 flex-col border-none"]`).Each(func(i int, s *goquery.Selection) {
+			href, exists := s.Attr("href")
+			if exists && strings.Contains(href, ".html") {
+				links = append(links, "https://www.sheypoor.com"+href)
+			} else {
+				fmt.Println("No href found")
+			}
+		})
+		return links, nil
 	}
-
-	doc, err := goquery.NewDocumentFromReader(strings.NewReader(allHTMLContent.String()))
-	if err != nil {
-		return nil, err
-	}
-
-	links := []string{}
-	doc.Find(`a[class="flex h-auto desktop:h-full desktop:flex-col desktop:border-b-0 desktop:pb-0 flex-row-reverse border-b-[1px] border-dark-4 pb-4 flex-col border-none"]`).Each(func(i int, s *goquery.Selection) {
-		href, exists := s.Attr("href")
-		if exists && strings.Contains(href, ".html") {
-			links = append(links, "https://www.sheypoor.com"+href)
-		} else {
-			fmt.Println("No href found")
-		}
-	})
-	return links, nil
 }
 
-func (c *SheypoorCrawler) CrawlPageUrl(pageUrl string) (*Ad, error) {
-	var ad Ad = Ad{}
-	var panicError error
-	defer func() {
-		if r := recover(); r != nil {
-			// Recover from panic and set err to indicate the panic message
-			panicError = fmt.Errorf("recovered from panic in CrawlPageUrl: %v", r)
+func (c *SheypoorCrawler) CrawlPageUrl(ctx context.Context, pageUrl string) (*Ad, error) {
+	select {
+	case <-ctx.Done():
+		return nil, errors.New("time-out")
+	default:
+		var ad Ad = Ad{}
+		var panicError error
+		defer func() {
+			if r := recover(); r != nil {
+				// Recover from panic and set err to indicate the panic message
+				panicError = fmt.Errorf("recovered from panic in CrawlPageUrl: %v", r)
+			}
+		}()
+
+		// Variables to store extracted data
+		var Title string
+		var Link string = pageUrl
+		var PhotoUrl string
+		var SellerContact string
+
+		var Description string
+		var Price string
+		var RentPrice string
+		var City string
+		var Neighborhood string
+		var Size string
+		var Bedrooms string
+		var HasElevator bool
+		var HasStorage bool
+		var HasParking bool
+		var BuiltYear string
+		var ForRent bool
+		var IsApartment bool
+		var Floor int
+		var CreationTime string
+
+		var attributes string
+
+		err := chromedp.Run(ctx,
+			chromedp.Navigate(pageUrl),
+			chromedp.Sleep(500*time.Microsecond),
+			chromedp.Text(`h1[class*="mjNIv"]`, &Title, chromedp.NodeVisible),
+			chromedp.AttributeValue(`div.swiper-slide.swiper-slide-active.U2WwT.ylynI img`, "src", &PhotoUrl, nil, chromedp.ByQuery),
+			chromedp.Text(`div[class*="MQJ5W"]`, &Description, chromedp.NodeVisible),
+			chromedp.ActionFunc(func(ctx context.Context) error {
+				var nodes []*cdp.Node
+				err := chromedp.Run(ctx,
+					chromedp.Nodes(`span.l29r1 strong`, &nodes, chromedp.AtLeast(0)),
+				)
+				if err != nil {
+					return err
+				}
+
+				if len(nodes) > 0 {
+					return chromedp.Text(`span.l29r1 strong`, &Price, chromedp.NodeVisible).Do(ctx)
+				}
+
+				return nil
+			}),
+			chromedp.Text(`div._3oBho`, &City, chromedp.NodeVisible),
+			chromedp.Text(`div.bWPjU`, &attributes, chromedp.NodeVisible),
+		)
+
+		if err != nil {
+			return nil, err
 		}
-	}()
-	// Create a new context for Chrome
-	ctx, cancel := chromedp.NewContext(context.Background())
-	defer cancel()
+		CreationTime = strings.Split(City, "،")[0]
+		Neighborhood = strings.Split(City, "،")[2]
+		City = strings.Split(City, "،")[1]
 
-	// Set timeout for the context
-	ctx, cancel = context.WithTimeout(ctx, 100*time.Second)
-	defer cancel()
-
-	// Variables to store extracted data
-	var Title string
-	var Link string = pageUrl
-	var PhotoUrl string
-	var SellerContact string
-
-	var Description string
-	var Price string
-	var RentPrice string
-	var City string
-	var Neighborhood string
-	var Size string
-	var Bedrooms string
-	var HasElevator bool
-	var HasStorage bool
-	var HasParking bool
-	var BuiltYear string
-	var ForRent bool
-	var IsApartment bool
-	var Floor int
-	var CreationTime string
-
-	var attributes string
-
-	err := chromedp.Run(ctx,
-		chromedp.Navigate(pageUrl),
-		chromedp.Sleep(500*time.Microsecond),
-		chromedp.Text(`h1[class*="mjNIv"]`, &Title, chromedp.NodeVisible),
-		chromedp.AttributeValue(`div.swiper-slide.swiper-slide-active.U2WwT.ylynI img`, "src", &PhotoUrl, nil, chromedp.ByQuery),
-		chromedp.Text(`div[class*="MQJ5W"]`, &Description, chromedp.NodeVisible),
-		chromedp.ActionFunc(func(ctx context.Context) error {
-			var nodes []*cdp.Node
-			err := chromedp.Run(ctx,
-				chromedp.Nodes(`span.l29r1 strong`, &nodes, chromedp.AtLeast(0)),
-			)
-			if err != nil {
-				return err
+		for k, v := range strings.Split(attributes, "\n") {
+			if strings.Contains(v, "متراژ") {
+				Size = strings.Split(attributes, "\n")[k+2]
 			}
 
-			if len(nodes) > 0 {
-				return chromedp.Text(`span.l29r1 strong`, &Price, chromedp.NodeVisible).Do(ctx)
+			if strings.Contains(v, "نوع ملک") {
+				IsApartment = strings.Contains(strings.Split(attributes, "\n")[k+2], "آپارتمان")
 			}
 
-			return nil
-		}),
-		chromedp.Text(`div._3oBho`, &City, chromedp.NodeVisible),
-		chromedp.Text(`div.bWPjU`, &attributes, chromedp.NodeVisible),
-	)
+			if strings.Contains(v, "تعداد اتاق") {
+				Bedrooms = strings.Split(attributes, "\n")[k+2]
+			}
 
-	if err != nil {
-		return nil, err
-	}
-	CreationTime = strings.Split(City, "،")[0]
-	Neighborhood = strings.Split(City, "،")[2]
-	City = strings.Split(City, "،")[1]
+			if strings.Contains(v, "پارکینگ") {
+				HasParking = !strings.Contains(strings.Split(attributes, "\n")[k+2], "ندارد")
+			}
 
-	for k, v := range strings.Split(attributes, "\n") {
-		if strings.Contains(v, "متراژ") {
-			Size = strings.Split(attributes, "\n")[k+2]
+			if strings.Contains(v, "انباری") {
+				HasStorage = !strings.Contains(strings.Split(attributes, "\n")[k+2], "ندارد")
+			}
+
+			if strings.Contains(v, "آسانسور") {
+				HasElevator = !strings.Contains(strings.Split(attributes, "\n")[k+2], "ندارد")
+			}
+			if strings.Contains(v, "سن بنا") {
+				BuiltYear = strings.Split(attributes, "\n")[k+2]
+			}
+			if strings.Contains(v, "اجاره") {
+				ForRent = true
+				RentPrice = strings.Split(attributes, "\n")[k+2]
+			}
+			if strings.Contains(v, "رهن") {
+				Price = strings.Split(attributes, "\n")[k+2]
+			}
+
 		}
 
-		if strings.Contains(v, "نوع ملک") {
-			IsApartment = strings.Contains(strings.Split(attributes, "\n")[k+2], "آپارتمان")
+		id := strings.Trim(strings.Split(Link, "-")[len(strings.Split(Link, "-"))-1], ".html")
+		SellerContact, err = c.getSellerPhone(id)
+		if err != nil {
+			fmt.Println("error in getSellerPhone", err)
 		}
-
-		if strings.Contains(v, "تعداد اتاق") {
-			Bedrooms = strings.Split(attributes, "\n")[k+2]
+		ad.Title = Title
+		ad.Link = Link
+		ad.PhotoUrl = PhotoUrl
+		ad.Description = Description
+		ad.City = strings.Trim(City, " ")
+		ad.Neighborhood = strings.Trim(Neighborhood, " ")
+		size, err := utils.PersianToEnglishDigits(Size)
+		if err != nil {
+			fmt.Println("invalid size")
 		}
+		ad.Size = uint(size)
 
-		if strings.Contains(v, "پارکینگ") {
-			HasParking = !strings.Contains(strings.Split(attributes, "\n")[k+2], "ندارد")
+		bedrooms, err := utils.PersianToEnglishDigits(Bedrooms)
+		if err != nil {
+			fmt.Println("invalid bedrooms")
 		}
+		ad.Bedrooms = uint(bedrooms)
+		ad.Floor = uint(Floor)
 
-		if strings.Contains(v, "انباری") {
-			HasStorage = !strings.Contains(strings.Split(attributes, "\n")[k+2], "ندارد")
+		ad.IsApartment = IsApartment
+		ad.ForRent = ForRent
+		ad.HasElevator = HasElevator
+		ad.HasParking = HasParking
+		ad.HasStorage = HasStorage
+		ad.SellerContact = SellerContact
+		ad.Floor = uint(Floor)
+
+		Price = strings.Trim(Price, " تومان")
+		RentPrice = strings.Trim(RentPrice, " تومان")
+		pr, err := utils.PersianToEnglishDigits(Price)
+		if err != nil {
+			fmt.Println("invalid price")
 		}
+		ad.Price = uint(pr)
 
-		if strings.Contains(v, "آسانسور") {
-			HasElevator = !strings.Contains(strings.Split(attributes, "\n")[k+2], "ندارد")
+		rpr, err := utils.PersianToEnglishDigits(RentPrice)
+		if err != nil {
+			fmt.Println("invalid RentPrice")
 		}
-		if strings.Contains(v, "سن بنا") {
-			BuiltYear = strings.Split(attributes, "\n")[k+2]
+		ad.RentPrice = uint(rpr)
+
+		BuiltYear = strings.Trim(BuiltYear, "سال ")
+		builtYear, err := utils.PersianToEnglishDigits(BuiltYear)
+		if err != nil {
+			fmt.Println("invalid builtYear")
 		}
-		if strings.Contains(v, "اجاره") {
-			ForRent = true
-			RentPrice = strings.Split(attributes, "\n")[k+2]
+		ad.BuiltYear = uint(CurrentYear - builtYear)
+		cr, err := utils.ParsePersianDate(strings.Trim(CreationTime, " "))
+		if err != nil {
+			fmt.Println("invalid CreationTime")
 		}
-		if strings.Contains(v, "رهن") {
-			Price = strings.Split(attributes, "\n")[k+2]
-		}
-
+		ad.CreationTime = cr
+		return &ad, panicError
 	}
-
-	id := strings.Trim(strings.Split(Link, "-")[len(strings.Split(Link, "-"))-1], ".html")
-	SellerContact, err = c.getSellerPhone(id)
-	if err != nil {
-		fmt.Println("error in getSellerPhone", err)
-	}
-	ad.Title = Title
-	ad.Link = Link
-	ad.PhotoUrl = PhotoUrl
-	ad.Description = Description
-	ad.City = strings.Trim(City, " ")
-	ad.Neighborhood = strings.Trim(Neighborhood, " ")
-	size, err := utils.PersianToEnglishDigits(Size)
-	if err != nil {
-		fmt.Println("invalid size")
-	}
-	ad.Size = uint(size)
-
-	bedrooms, err := utils.PersianToEnglishDigits(Bedrooms)
-	if err != nil {
-		fmt.Println("invalid bedrooms")
-	}
-	ad.Bedrooms = uint(bedrooms)
-	ad.Floor = uint(Floor)
-
-	ad.IsApartment = IsApartment
-	ad.ForRent = ForRent
-	ad.HasElevator = HasElevator
-	ad.HasParking = HasParking
-	ad.HasStorage = HasStorage
-	ad.SellerContact = SellerContact
-	ad.Floor = uint(Floor)
-
-	Price = strings.Trim(Price, " تومان")
-	RentPrice = strings.Trim(RentPrice, " تومان")
-	pr, err := utils.PersianToEnglishDigits(Price)
-	if err != nil {
-		fmt.Println("invalid price")
-	}
-	ad.Price = uint(pr)
-
-	rpr, err := utils.PersianToEnglishDigits(RentPrice)
-	if err != nil {
-		fmt.Println("invalid RentPrice")
-	}
-	ad.RentPrice = uint(rpr)
-
-	BuiltYear = strings.Trim(BuiltYear, "سال ")
-	builtYear, err := utils.PersianToEnglishDigits(BuiltYear)
-	if err != nil {
-		fmt.Println("invalid builtYear")
-	}
-	ad.BuiltYear = uint(CurrentYear - builtYear)
-	cr, err := utils.ParsePersianDate(strings.Trim(CreationTime, " "))
-	if err != nil {
-		fmt.Println("invalid CreationTime")
-	}
-	ad.CreationTime = cr
-	return &ad, panicError
 }
 
 func (c *SheypoorCrawler) getSellerPhone(id string) (string, error) {
