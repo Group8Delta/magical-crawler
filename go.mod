@@ -6,15 +6,16 @@ toolchain go1.23.2
 
 require (
 	github.com/PuerkitoBio/goquery v1.5.1
+	github.com/chromedp/cdproto v0.0.0-20241022234722-4d5d5faf59fb
 	github.com/chromedp/chromedp v0.11.1
 	github.com/spf13/viper v1.19.0
+	gopkg.in/telebot.v4 v4.0.0-beta.4
 	gorm.io/driver/postgres v1.5.9
 	gorm.io/gorm v1.25.12
 )
 
 require (
 	github.com/andybalholm/cascadia v1.2.0 // indirect
-	github.com/chromedp/cdproto v0.0.0-20241022234722-4d5d5faf59fb // indirect
 	github.com/chromedp/sysutil v1.1.0 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/gobwas/httphead v0.1.0 // indirect
@@ -48,6 +49,5 @@ require (
 	golang.org/x/sys v0.26.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
-	gopkg.in/telebot.v4 v4.0.0-beta.4 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

@@ -1,7 +1,9 @@
 package crawler
 
 import (
+	"fmt"
 	"log"
+	"runtime"
 	"sync"
 	"time"
 )
@@ -24,8 +26,18 @@ type Task struct {
 
 type Result struct {
 	TimeSpent time.Duration
+	RAMUsage  int
 	Err       error
 	Ad        *Ad
+}
+
+func (r Result) String() string {
+	if r.Err == nil {
+		return fmt.Sprintf("Successful crawl: %s ( Time-Spent: %s, RAM-Usage: %dMB ) ", r.Ad.Link, r.TimeSpent, r.RAMUsage)
+	} else {
+		return fmt.Sprintf("Error in crawl: %s ( Err: %s ) ", r.Ad.Link, r.Err.Error())
+	}
+
 }
 
 // Dispatcher: enqueues tasks into the jobs queue and starts the workers.
@@ -53,17 +65,21 @@ func (wp *WorkerPoll) worker(id int, wg *sync.WaitGroup) {
 	defer wg.Done()
 	for task := range wp.jobsQueue { // Process jobs from the queue
 		log.Printf("Worker %d started crawl page %s\n", id, task.Link)
+		var memStatsStart, memStatsEnd runtime.MemStats
 		start := time.Now()
+		runtime.ReadMemStats(&memStatsStart)
 		crawlData, err := wp.crawler.CrawlPageUrl(task.Link)
+		runtime.ReadMemStats(&memStatsEnd)
 		result := Result{Ad: crawlData, Err: err, TimeSpent: time.Since(start)}
-		log.Printf("Worker %d finished crawl page %s, time-spennt %s\n", id, task.Link, result.TimeSpent)
-		wp.resultsQueue <- result // Send result to the collector
+		result.RAMUsage = int( (memStatsEnd.Alloc - memStatsStart.Alloc) / (1024 * 1024)) // Convert to MB
+		wp.resultsQueue <- result                                                   // Send result to the collector
 	}
 }
 
 // ResultsCollector: collects results of crawling pages
 func (wp *WorkerPoll) resultsCollector(done chan bool) {
 	for result := range wp.resultsQueue {
+		log.Println(result)
 		if result.Err != nil {
 			wp.errors = append(wp.errors, result)
 		} else {

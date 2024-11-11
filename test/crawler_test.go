@@ -4,8 +4,23 @@ import (
 	"encoding/json"
 	"fmt"
 	"magical-crwler/services/crawler"
+	"runtime"
+	"strconv"
 	"testing"
 )
+
+func TestMemStat(t *testing.T) {
+	var memStatsStart, memStatsEnd runtime.MemStats
+
+	runtime.ReadMemStats(&memStatsStart)
+	a := []string{}
+	for i := 0; i < 1_000_000; i++ {
+		a = append(a, strconv.Itoa(i))
+	}
+	runtime.ReadMemStats(&memStatsEnd)
+	fmt.Println("Mem: ", (memStatsEnd.Alloc-memStatsStart.Alloc)/(1024*1024), "MB")
+
+}
 
 func TestWorkerPool(t *testing.T) {
 	url := "https://divar.ir/s/zanjan/buy-residential"
