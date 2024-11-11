@@ -33,7 +33,7 @@ type Result struct {
 
 func (r Result) String() string {
 	if r.Err == nil {
-		return fmt.Sprintf("Successful crawl: %s ( Time-Spent: %s, RAM-Usage: %dMB ) ", r.Ad.Link, r.TimeSpent, r.RAMUsage)
+		return fmt.Sprintf("Successful crawl: %s ( Time-Spent: %s, RAM-Usage: %dKB ) ", r.Ad.Link, r.TimeSpent, r.RAMUsage)
 	} else {
 		return fmt.Sprintf("Error in crawl: %s ( Err: %s ) ", r.Ad.Link, r.Err.Error())
 	}
@@ -59,20 +59,29 @@ func (wp *WorkerPoll) dispatcher() {
 	wg.Wait()              // Wait for all workers to complete
 	close(wp.resultsQueue) // Signal no more results will be sent.
 }
-
-// Worker Goroutines: function to process page.
 func (wp *WorkerPoll) worker(id int, wg *sync.WaitGroup) {
 	defer wg.Done()
 	for task := range wp.jobsQueue { // Process jobs from the queue
 		log.Printf("Worker %d started crawl page %s\n", id, task.Link)
-		var memStatsStart, memStatsEnd runtime.MemStats
 		start := time.Now()
+		var memStatsStart, memStatsEnd runtime.MemStats
 		runtime.ReadMemStats(&memStatsStart)
 		crawlData, err := wp.crawler.CrawlPageUrl(task.Link)
 		runtime.ReadMemStats(&memStatsEnd)
-		result := Result{Ad: crawlData, Err: err, TimeSpent: time.Since(start)}
-		result.RAMUsage = int( (memStatsEnd.Alloc - memStatsStart.Alloc) / (1024 * 1024)) // Convert to MB
-		wp.resultsQueue <- result                                                   // Send result to the collector
+
+		ramUsage := 0
+		if memStatsEnd.HeapAlloc > memStatsStart.HeapAlloc {
+			ramUsage = int((memStatsEnd.HeapAlloc - memStatsStart.HeapAlloc) / (1024)) // Convert to KB
+		}
+
+		result := Result{
+			Ad:        crawlData,
+			Err:       err,
+			TimeSpent: time.Since(start),
+			RAMUsage:  ramUsage,
+		}
+
+		wp.resultsQueue <- result // Send result to the collector
 	}
 }
 
@@ -93,7 +102,7 @@ func (wp *WorkerPoll) Start() {
 	log.Printf("start worker-pool with %d worker", wp.numWorkers)
 	links, err := wp.crawler.CrawlAdsLinks(wp.mainLink)
 	if err != nil {
-		log.Println("Error in crawl main page with crawler ")
+		log.Println("Error in crawl main page with crawler ", err)
 		return
 	}
 	log.Printf("from main link %s fetch %d sub-link", wp.mainLink, len(links))
