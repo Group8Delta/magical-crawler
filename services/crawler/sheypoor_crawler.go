@@ -28,7 +28,7 @@ type SheypoorContractResponse struct {
 }
 
 type SheypoorCrawler struct {
-	config *config.Config
+	config    *config.Config
 	maxDeepth int
 }
 
@@ -99,10 +99,10 @@ func (c *SheypoorCrawler) CrawlAdsLinks(url string) ([]string, error) {
 	}
 
 	links := []string{}
-	doc.Find("a.qL9GS").Each(func(i int, s *goquery.Selection) {
+	doc.Find(`a[class="flex h-auto desktop:h-full desktop:flex-col desktop:border-b-0 desktop:pb-0 flex-row-reverse border-b-[1px] border-dark-4 pb-4 flex-col border-none"]`).Each(func(i int, s *goquery.Selection) {
 		href, exists := s.Attr("href")
 		if exists && strings.Contains(href, ".html") {
-			links = append(links, href)
+			links = append(links, "https://www.sheypoor.com"+href)
 		} else {
 			fmt.Println("No href found")
 		}
