@@ -3,6 +3,7 @@ package database
 import (
 	"fmt"
 	"magical-crwler/config"
+	"magical-crwler/models"
 	"time"
 
 	"gorm.io/driver/postgres"
@@ -28,7 +29,7 @@ func (p *postgresDb) Init(cfg *config.Config) error {
 	if err != nil {
 		return err
 	}
-
+	p.dbClient.AutoMigrate(&models.User{}, &models.UserFilter{}, &models.Ad{}, &models.Bookmark{}, &models.CrawlerError{}, &models.CrawlerFunctionality{}, &models.Range{}, &models.PriceHistory{}, &models.Role{}, &models.SearchedWord{}, &models.FilteredAd{}, &models.Filter{})
 	sqlDb.SetMaxIdleConns(cfg.DatabaseMaxIdleConns)
 	sqlDb.SetMaxOpenConns(cfg.DatabaseMaxOpenConns)
 	sqlDb.SetConnMaxLifetime(cfg.DatabaseConnMaxLifetime * time.Minute)

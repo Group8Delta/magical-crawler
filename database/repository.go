@@ -19,20 +19,21 @@ type Repository struct {
 
 func (r *Repository) CreateFilter(filter Dtos.FilterDto) models.Filter {
 	cf := models.Filter{
-		SearchQuery:       filter.SearchQuery,
-		PriceRange:        filter.PriceRange,
-		RentPriceRange:    filter.RentPriceRange,
-		ForRent:           filter.ForRent,
-		City:              filter.City,
-		Neighborhood:      filter.Neighborhood,
-		SizeRange:         filter.SizeRange,
-		BedroomRange:      filter.BedroomRange,
-		FloorRange:        filter.FloorRange,
-		HasElevator:       filter.HasElevator,
-		HasStorage:        filter.HasStorage,
-		AgeRange:          filter.AgeRange,
-		IsApartment:       filter.IsApartment,
-		CreationTimeRange: filter.CreationTimeRange,
+		SearchQuery:           filter.SearchQuery,
+		PriceRange:            filter.PriceRange,
+		RentPriceRange:        filter.RentPriceRange,
+		ForRent:               filter.ForRent,
+		City:                  filter.City,
+		Neighborhood:          filter.Neighborhood,
+		SizeRange:             filter.SizeRange,
+		BedroomRange:          filter.BedroomRange,
+		FloorRange:            filter.FloorRange,
+		HasElevator:           filter.HasElevator,
+		HasStorage:            filter.HasStorage,
+		AgeRange:              filter.AgeRange,
+		IsApartment:           filter.IsApartment,
+		CreationTimeRangeFrom: filter.CreationTimeRangeFrom,
+		CreationTimeRangeTo:   filter.CreationTimeRangeTo,
 	}
 
 	r.db.GetDb().Create(&cf)
@@ -60,7 +61,8 @@ func (r *Repository) UpdateFilter(filter Dtos.FilterDto) (models.Filter, error) 
 	f.HasStorage = filter.HasStorage
 	f.AgeRange = filter.AgeRange
 	f.IsApartment = filter.IsApartment
-	f.CreationTimeRange = filter.CreationTimeRange
+	f.CreationTimeRangeFrom = filter.CreationTimeRangeFrom
+	f.CreationTimeRangeTo = filter.CreationTimeRangeTo
 	f.SearchQuery = filter.SearchQuery
 	f.PriceRange = filter.PriceRange
 	f.RentPriceRange = filter.RentPriceRange
