@@ -17,6 +17,13 @@ import (
 	"github.com/chromedp/chromedp"
 )
 
+var divar_search_urls = []string{
+	"https://divar.ir/s/isfahan/buy-apartment",
+	"https://divar.ir/s/isfahan/buy-villa",
+	"https://divar.ir/s/isfahan/rent-apartment",
+	"https://divar.ir/s/isfahan/rent-villa",
+}
+
 type DivarCrawler struct {
 	config    *config.Config
 	maxDeepth int
@@ -419,4 +426,25 @@ func (c *DivarCrawler) CrawlPageUrl(pageUrl string) (*Ad, error) {
 
 	return &ad, panicErr
 
+}
+
+// max deepth 0 means crawl infinity
+func (c *DivarCrawler) RunCrawler() {
+	go func() {
+		for _, v := range divar_search_urls {
+
+			wp := NewWorkerPool(v, numberOfCrawlerWorkers, c)
+
+			wp.Start()
+			wp.GetResults()
+			errors := wp.GetErrors()
+
+			for _, v := range errors {
+				fmt.Println(v.Err.Error())
+			}
+
+			fmt.Printf("errors count:%v\n", len(errors))
+
+		}
+	}()
 }
