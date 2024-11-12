@@ -23,13 +23,13 @@ func TestMain(m *testing.M) {
 
 	// defer testDbService.Close()
 
-	divarCrawler, err := crawler.New(crawler.DivarCrawlerType, config,1)
+	divarCrawler, err := crawler.New(crawler.DivarCrawlerType, config, 1, nil)
 	if err != nil {
 		panic("Failed to initial divar Crawler: " + err.Error())
 	}
 	testDivarCrawler = divarCrawler
 
-	sheypoorCrawler, err := crawler.New(crawler.SheypoorCrawlerType, config,1)
+	sheypoorCrawler, err := crawler.New(crawler.SheypoorCrawlerType, config, 1, nil)
 	if err != nil {
 		panic("Failed to initial sheypoor Crawler: " + err.Error())
 	}

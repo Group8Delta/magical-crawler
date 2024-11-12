@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"log"
 	"magical-crwler/config"
+	"magical-crwler/services/alerting"
 	"magical-crwler/utils"
 	"net/http"
 	"strings"
@@ -37,6 +38,7 @@ type SheypoorContractResponse struct {
 type SheypoorCrawler struct {
 	config    *config.Config
 	maxDeepth int
+	alerter   *alerting.Alerter
 }
 
 func (c *SheypoorCrawler) CrawlAdsLinks(ctx context.Context, url string) ([]string, error) {
@@ -338,18 +340,21 @@ func (c *SheypoorCrawler) getSellerPhone(id string) (string, error) {
 func (c *SheypoorCrawler) RunCrawler() {
 	go func() {
 		for _, v := range sheypoor_search_urls {
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
 
 			wp := NewWorkerPool(v, numberOfCrawlerWorkers, c)
 
-			wp.Start()
+			wp.Start(ctx)
 			wp.GetResults()
 			errors := wp.GetErrors()
 
 			for _, v := range errors {
+				c.alerter.SendAlert(&alerting.Alert{Title: "sheypoor crawler error", Content: v.String()})
+
 				fmt.Println(v.Err.Error())
 			}
 
-			fmt.Printf("errors count:%v\n", len(errors))
+			cancel()
 		}
 	}()
 }

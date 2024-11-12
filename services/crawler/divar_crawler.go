@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"magical-crwler/config"
+	"magical-crwler/services/alerting"
 	"magical-crwler/utils"
 	"net/url"
 	"strconv"
@@ -28,6 +29,7 @@ var divar_search_urls = []string{
 type DivarCrawler struct {
 	config    *config.Config
 	maxDeepth int
+	alerter   *alerting.Alerter
 }
 
 func (c *DivarCrawler) CrawlAdsLinks(ctx context.Context, url string) ([]string, error) {
@@ -449,18 +451,21 @@ func (c *DivarCrawler) CrawlPageUrl(ctx context.Context, pageUrl string) (*Ad, e
 func (c *DivarCrawler) RunCrawler() {
 	go func() {
 		for _, v := range divar_search_urls {
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
 
 			wp := NewWorkerPool(v, numberOfCrawlerWorkers, c)
 
-			wp.Start()
+			wp.Start(ctx)
 			wp.GetResults()
 			errors := wp.GetErrors()
 
 			for _, v := range errors {
+				c.alerter.SendAlert(&alerting.Alert{Title: "divar crawler error", Content: v.String()})
 				fmt.Println(v.Err.Error())
 			}
 
 			fmt.Printf("errors count:%v\n", len(errors))
+			cancel()
 
 		}
 	}()

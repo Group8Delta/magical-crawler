@@ -1,8 +1,10 @@
 package bot
 
 import (
+	"fmt"
 	"log"
 	"magical-crwler/services/notification"
+	"strconv"
 	"time"
 
 	"gopkg.in/telebot.v4"
@@ -32,7 +34,20 @@ func NewBot(config BotConfig) (*Bot, error) {
 }
 
 func (b *Bot) Notify(recipientIdentifier string, m *notification.Message) error {
+
+	teleUserId, err := strconv.Atoi(recipientIdentifier)
+	if err != nil {
+		return err
+	}
+	recipient := telebot.ChatID(teleUserId)
+	message := fmt.Sprintf("%s \n\n %s", m.Title, m.Content)
+	_, err = b.bot.Send(recipient, message)
+	if err != nil {
+		return err
+	}
+
 	return nil
+
 }
 
 func (b *Bot) StartBot() {
