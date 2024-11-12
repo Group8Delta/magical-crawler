@@ -6,33 +6,33 @@ import (
 	"strconv"
 )
 
-type Alerting struct {
-	config            *config.Config
-	notifier          notification.Notifier
-	adminMessageQueue IAdminMessageQueue
+type Alerter struct {
+	config     *config.Config
+	notifier   notification.Notifier
+	AlertQueue IAlertQueue
 }
 
 var adminSelector = 0
 
-func New(config *config.Config, notifier notification.Notifier) *Alerting {
-	return &Alerting{config: config, notifier: notifier, adminMessageQueue: NewAdminMessageQueue()}
+func NewAlerter(config *config.Config, notifier notification.Notifier) *Alerter {
+	return &Alerter{config: config, notifier: notifier, AlertQueue: NewAlertQueue()}
 }
 
-func (n *Alerting) NotifyAdmins(m *AdminMessage) {
-	n.adminMessageQueue.Push(m)
+func (n *Alerter) SendAlert(m *Alert) {
+	n.AlertQueue.Push(m)
 }
 
-func (n *Alerting) RunAdminNotifier() {
+func (n *Alerter) RunAdminNotifier() {
 	go func() {
 		for {
 			if adminSelector >= 0 && adminSelector < len(config.AdminUserIds) {
 				adminSelector = 0
 				continue
 			}
-			if n.adminMessageQueue.Len() < 1 {
+			if n.AlertQueue.Len() < 1 {
 				continue
 			}
-			m := n.adminMessageQueue.Pop().(*AdminMessage)
+			m := n.AlertQueue.Pop().(*Alert)
 			if m != nil {
 				user_id := strconv.Itoa(config.AdminUserIds[adminSelector])
 				n.notifier.Notify(user_id, &notification.Message{Title: m.Title, Content: m.Content})
