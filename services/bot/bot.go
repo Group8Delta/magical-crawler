@@ -31,7 +31,7 @@ func NewBot(config BotConfig) (*Bot, error) {
 	}, nil
 }
 
-func (b *Bot) Notify(userId string, m *notification.Message) error {
+func (b *Bot) Notify(recipientIdentifier string, m *notification.Message) error {
 	return nil
 }
 

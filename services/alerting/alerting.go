@@ -34,8 +34,8 @@ func (n *Alerter) RunAdminNotifier() {
 			}
 			m := n.AlertQueue.Pop().(*Alert)
 			if m != nil {
-				user_id := strconv.Itoa(config.AdminUserIds[adminSelector])
-				n.notifier.Notify(user_id, &notification.Message{Title: m.Title, Content: m.Content})
+				recipientIdentifier := strconv.Itoa(config.AdminUserIds[adminSelector])
+				n.notifier.Notify(recipientIdentifier, &notification.Message{Title: m.Title, Content: m.Content})
 				adminSelector++
 			}
 

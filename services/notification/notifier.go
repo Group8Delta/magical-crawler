@@ -6,5 +6,5 @@ type Message struct {
 }
 
 type Notifier interface {
-	Notify(userId string, m *Message) error
+	Notify(recipientIdentifier string, m *Message) error
 }
