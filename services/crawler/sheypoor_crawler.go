@@ -20,6 +20,12 @@ import (
 
 const CurrentYear = 1403
 
+var sheypoor_search_urls = []string{
+	"https://www.sheypoor.com/s/khorramdarreh/houses-apartments-for-sale",
+	"https://www.sheypoor.com/s/khorramdarreh/house-apartment-for-rent",
+	"https://www.sheypoor.com/s/khorramdarreh/villa-for-sale",
+}
+
 type SheypoorContractResponse struct {
 	Data struct {
 		Attributes struct {
@@ -326,4 +332,24 @@ func (c *SheypoorCrawler) getSellerPhone(id string) (string, error) {
 	}
 
 	return result.Data.Attributes.PhoneNumber, nil
+}
+
+// max deepth 0 means crawl infinity
+func (c *SheypoorCrawler) RunCrawler() {
+	go func() {
+		for _, v := range sheypoor_search_urls {
+
+			wp := NewWorkerPool(v, numberOfCrawlerWorkers, c)
+
+			wp.Start()
+			wp.GetResults()
+			errors := wp.GetErrors()
+
+			for _, v := range errors {
+				fmt.Println(v.Err.Error())
+			}
+
+			fmt.Printf("errors count:%v\n", len(errors))
+		}
+	}()
 }
