@@ -2,6 +2,7 @@ package bot
 
 import (
 	"log"
+	"magical-crwler/services/notification"
 	"time"
 
 	"gopkg.in/telebot.v4"
@@ -28,6 +29,10 @@ func NewBot(config BotConfig) (*Bot, error) {
 		bot:    bot,
 		config: config,
 	}, nil
+}
+
+func (b *Bot) Notify(recipientIdentifier string, m *notification.Message) error {
+	return nil
 }
 
 func (b *Bot) StartBot() {

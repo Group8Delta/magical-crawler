@@ -16,6 +16,8 @@ import (
 var once sync.Once
 var config *Config
 
+var AdminUserIds = []int{}
+
 type Config struct {
 	DatabaseHost            string        `mapstructure:"DATABASE_HOST"`
 	DatabasePort            string        `mapstructure:"DATABASE_PORT"`
@@ -30,6 +32,7 @@ type Config struct {
 	Port                    string        `mapstructure:"PORT"`
 	SheypoorToken           string        `mapstructure:"SHEYPOOR_TOKEN"`
 	DivarToken              string        `mapstructure:"DIVAR_TOKEN"`
+	EnableFullCrawl         bool          `mapstructure:"ENABLE_FULL_CRAWL"`
 }
 
 func loadEnvConfig() (*viper.Viper, error) {
@@ -73,6 +76,7 @@ func bindEnvVars(v *viper.Viper) {
 	v.BindEnv("PORT")
 	v.BindEnv("SHEYPOOR_TOKEN")
 	v.BindEnv("DIVAR_TOKEN")
+	v.BindEnv("ENABLE_FULL_CRAWL")
 
 }
 
