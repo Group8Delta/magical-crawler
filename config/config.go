@@ -16,6 +16,8 @@ import (
 var once sync.Once
 var config *Config
 
+var AdminUserIds = []int{}
+
 type Config struct {
 	DatabaseHost            string        `mapstructure:"DATABASE_HOST"`
 	DatabasePort            string        `mapstructure:"DATABASE_PORT"`
