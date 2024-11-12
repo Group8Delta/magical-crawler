@@ -1,6 +1,7 @@
 package crawler
 
 import (
+	"context"
 	"errors"
 	"magical-crwler/config"
 )
@@ -19,8 +20,8 @@ var CrawlerTypes []CrawlerType = []CrawlerType{
 }
 
 type CrawlerInterface interface {
-	CrawlAdsLinks(searchUrl string) ([]string, error)
-	CrawlPageUrl(pageUrl string) (*Ad, error)
+	CrawlAdsLinks(ctx context.Context,searchUrl string) ([]string, error)
+	CrawlPageUrl(ctx context.Context,pageUrl string) (*Ad, error)
 	RunCrawler()
 }
 
