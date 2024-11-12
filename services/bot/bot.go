@@ -2,6 +2,7 @@ package bot
 
 import (
 	"log"
+	"magical-crwler/constants"
 	"time"
 
 	"gopkg.in/telebot.v4"
@@ -30,8 +31,14 @@ func NewBot(config BotConfig) (*Bot, error) {
 	}, nil
 }
 
+func (b *Bot) RegisterHandlers() {
+	b.bot.Handle("/start", StartHandler(b))
+	b.bot.Handle(constants.SearchButton, FilterHandlers(b))
+	b.bot.Handle("/exportFile", ExportHandler(b))
+}
+
 func (b *Bot) StartBot() {
 	log.Print("Bot is running !")
-	RegisterHandlers(b)
+	b.RegisterHandlers()
 	b.bot.Start()
 }
