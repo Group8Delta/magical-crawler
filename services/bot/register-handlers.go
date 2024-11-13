@@ -1,16 +1,16 @@
 package bot
 
 import (
-	"magical-crwler/config"
+	"magical-crwler/constants"
 
 	"gorm.io/gorm"
 )
 
 func RegisterHanlders(b *Bot, db *gorm.DB) {
-	b.bot.Handle("/start", StartHandler(b, db))
-	b.bot.Handle(config.SearchButton, FilterHandlers(b))
-	b.bot.Handle(config.AdminPanelButton, AdminHandler(b))
-	b.bot.Handle(config.AddAdminButton, AddAdminHandler(b, db))
-	b.bot.Handle(config.RemoveAdminButton, RemoveAdminHandler(b, db))
-	b.bot.Handle("/exportFile", ExportHandler(b))
+	b.Bot.Handle("/start", StartHandler(b, db))
+	b.Bot.Handle(constants.SearchButton, FilterHandlers(b))
+	b.Bot.Handle(constants.AdminPanelButton, AdminHandler(b))
+	b.Bot.Handle(constants.AddAdminButton, AddAdminHandler(b, db))
+	b.Bot.Handle(constants.RemoveAdminButton, RemoveAdminHandler(b, db))
+	b.Bot.Handle("/exportFile", ExportHandler(b))
 }
