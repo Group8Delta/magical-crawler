@@ -47,5 +47,5 @@ To get started with Magical Crawler:
 Run tests to verify functionality and stability:
 
 ```bash
-go test ../main.go
+go test ../test
 ```

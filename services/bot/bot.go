@@ -3,16 +3,19 @@ package bot
 import (
 	"fmt"
 	"log"
+	"magical-crwler/config"
+	"magical-crwler/constants"
 	"magical-crwler/services/notification"
 	"strconv"
 	"time"
 
 	"gopkg.in/telebot.v4"
+	"gorm.io/gorm"
 )
 
 type Bot struct {
-	bot    *telebot.Bot
-	config BotConfig
+	Bot    *telebot.Bot
+	Config BotConfig
 }
 type BotConfig struct {
 	Token  string
@@ -28,8 +31,8 @@ func NewBot(config BotConfig) (*Bot, error) {
 		log.Fatalln(err.Error())
 	}
 	return &Bot{
-		bot:    bot,
-		config: config,
+		Bot:    bot,
+		Config: config,
 	}, nil
 }
 
@@ -47,14 +50,24 @@ func (b *Bot) Notify(recipientIdentifier string, m *notification.Message) error 
 	}
 
 	return nil
-
+}
+func (b *Bot) RegisterHandlers(db *gorm.DB) {
+	b.Bot.Handle("/menu", MainMenuHandler)
+	b.Bot.Handle("/start", StartHandler(b))
+	b.Bot.Handle(&telebot.Btn{Unique: "export"}, ExportHandler(b))
+	b.Bot.Handle(constants.FiltersButton, FilterHandlers(b))
+	b.Bot.Handle("/exportFile", ExportHandler(b))
+	b.Bot.Handle(&telebot.Btn{Unique: "export"}, ExportHandler(b))
+	b.Bot.Handle(&telebot.Btn{Unique: "export_csv"}, export_csv_Handler(b))
+	b.Bot.Handle(&telebot.Btn{Unique: "export_xlsx"}, export_xlsx_Handler(b))
+	b.bot.Handle(config.AdminPanelButton, AdminHandler(b))
+	b.bot.Handle(config.AddAdminButton, AddAdminHandler(b, db))
+	b.bot.Handle(config.RemoveAdminButton, RemoveAdminHandler(b, db))
 }
 
-func (b *Bot) StartBot() {
+func (b *Bot) StartBot(db *gorm.DB) {
 	log.Print("Bot is running !")
-	RegisterHanlders(b)
-
-	// b.bot.Handle("/start", StartHandler(b))
-	// b.bot.Handle(config.FiltersButton, FilterHandlers(b))
-	b.bot.Start()
+	b.RegisterHandlers(db)
+	b.Bot.Start()
+	b.Bot.Start()
 }
