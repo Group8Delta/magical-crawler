@@ -50,7 +50,8 @@ func main() {
 	database.Init(config)
 	defer database.Close()
 
-	db, err := database.GetDb().DB()
+	gdb := database.GetDb()
+	db, err := gdb.DB()
 	if err != nil {
 		fmt.Println("database connection error", err)
 	}
@@ -66,6 +67,6 @@ func main() {
 	if err != nil {
 		log.Println(err.Error())
 	}
-	bot.StartBot()
+	bot.StartBot(gdb)
 	// http.ListenAndServe(":"+config.Port, nil)
 }

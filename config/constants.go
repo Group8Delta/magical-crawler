@@ -9,6 +9,7 @@ const (
 	FavoritesButton         = "لیست علاقه‌مندی ها"
 	ExportButton            = "خروجی فایل"
 	AccountManagementButton = "مدیریت حساب"
+	AdminPanelButton        = "پنل ادمین"
 	SupportButton           = "تماس با ما"
 	BackButton              = "بازگشت"
 )
@@ -177,11 +178,21 @@ const (
 	FileFormatSelection = "انتخاب فرمت فایل (CSV یا XLSX)"
 )
 
-// Crawler Admin Menu
+// Admin Menu
 const (
 	CrawlerStatusButton    = "مشاهده وضعیت کرالر"
 	PeriodicSettingsButton = "تنظیمات دوره‌ای"
 	ViewLogsButton         = "مشاهده لاگ‌ها"
+	AddAdminButton         = "افزودن ادمین"
+	RemoveAdminButton      = "حذف ادمین"
+	AddAdminQuestion       = "آیدی ادمینی که میخواهی اضافه کنی رو وارد کن"
+	RemoveAdminQuestion    = "آیدی ادمینی که میخواهی حذف کنی رو وارد کن"
+	AdminAddedMsg          = "ادمین با موفقیت اضافه شد"
+	AdminRemovedMsg        = "ادمین با موفقیت حذف شد"
+	AdminActionMsg         = "یکی از گزینه ها رو انتخاب کن:"
+	WrongUserIdFromat      = "لطفا آیدی یوزر رو بدرستی وارد کن"
+	AdminNotFound          = "ادمین پیدا نشد"
+	UserNotFound           = "کاربر پیدا نشد"
 )
 
 // ‌Bot Messages

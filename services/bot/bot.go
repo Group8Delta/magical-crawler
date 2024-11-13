@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"gopkg.in/telebot.v4"
+	"gorm.io/gorm"
 )
 
 type Bot struct {
@@ -35,9 +36,9 @@ func (b *Bot) Notify(recipientIdentifier string, m *notification.Message) error 
 	return nil
 }
 
-func (b *Bot) StartBot() {
+func (b *Bot) StartBot(db *gorm.DB) {
 	log.Print("Bot is running !")
-	RegisterHanlders(b)
+	RegisterHanlders(b, db)
 
 	// b.bot.Handle("/start", StartHandler(b))
 	// b.bot.Handle(config.FiltersButton, FilterHandlers(b))
