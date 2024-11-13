@@ -32,10 +32,14 @@ func NewBot(config BotConfig) (*Bot, error) {
 }
 
 func (b *Bot) RegisterHandlers() {
-	b.Bot.Handle("/start", StartHandler(b))
 	b.Bot.Handle("/menu", MainMenuHandler)
-	b.Bot.Handle(constants.SearchButton, FilterHandlers(b))
+	b.Bot.Handle("/start", StartHandler(b))
+	b.Bot.Handle(&telebot.Btn{Unique: "export"}, ExportHandler(b))
+	b.Bot.Handle(constants.FiltersButton, FilterHandlers(b))
 	b.Bot.Handle("/exportFile", ExportHandler(b))
+	b.Bot.Handle(&telebot.Btn{Unique: "export"}, ExportHandler(b))
+	b.Bot.Handle(&telebot.Btn{Unique: "export_csv"}, export_csv_Handler(b))
+	b.Bot.Handle(&telebot.Btn{Unique: "export_xlsx"}, export_xlsx_Handler(b))
 }
 
 func (b *Bot) StartBot() {

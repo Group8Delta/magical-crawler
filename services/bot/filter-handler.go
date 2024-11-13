@@ -307,7 +307,7 @@ func FilterHandlers(b *Bot) func(ctx telebot.Context) error {
 			return ctx.EditOrSend(filters.Message(), priceSelector)
 		case "Search":
 			ctx.Send(constants.Loading)
-			ads := filters.startSearch()
+			// ads := filters.startSearch()
 			return ctx.Send(constants.SearchMsg)
 		case "Remove":
 			filters.removeAllValue()

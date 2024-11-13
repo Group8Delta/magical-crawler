@@ -12,6 +12,12 @@ const (
 	BackButton              = "بازگشت"
 )
 
+//export buttons
+const (
+	ExportXLSX = "xslx(اکسل)"
+	ExportCSV  = "csv"
+)
+
 // Search Menu
 const (
 	SourceSelectButton   = "انتخاب منبع"
