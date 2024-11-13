@@ -452,7 +452,9 @@ func (c *DivarCrawler) RunCrawler() {
 
 			wp := NewWorkerPool(v, numberOfCrawlerWorkers, c)
 
-			wp.Start()
+			ctx,cancel:=context.WithTimeout(context.Background(),60*time.Second)
+			defer cancel()
+			wp.Start(ctx)
 			wp.GetResults()
 			errors := wp.GetErrors()
 
