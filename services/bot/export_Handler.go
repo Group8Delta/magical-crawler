@@ -2,7 +2,7 @@ package bot
 
 import (
 	"log"
-	"magical-crwler/config"
+	"magical-crwler/constants"
 	"os"
 
 	"gopkg.in/telebot.v4"
@@ -12,8 +12,8 @@ func ExportHandler(b *Bot) func(c telebot.Context) error {
 	return func(c telebot.Context) error {
 		exportMenu := &telebot.ReplyMarkup{}
 
-		xlsxBtn := exportMenu.Data(config.ExportXLSX, "export_xlsx")
-		csvBtn := exportMenu.Data(config.ExportCSV, "export_csv")
+		xlsxBtn := exportMenu.Data(constants.ExportXLSX, "export_xlsx")
+		csvBtn := exportMenu.Data(constants.ExportCSV, "export_csv")
 
 		exportMenu.Inline(
 			exportMenu.Row(xlsxBtn, csvBtn),

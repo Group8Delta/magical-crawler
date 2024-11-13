@@ -1,25 +1,27 @@
 package bot
 
-import (
-	"magical-crwler/config"
+// tasmim giri beshe
 
-	"gopkg.in/telebot.v4"
-)
+// import (
+// 	"magical-crwler/constants"
 
-func MenuHandler(b *Bot) func(c telebot.Context) error {
-	return func(c telebot.Context) error {
-		menu := &telebot.ReplyMarkup{}
+// 	"gopkg.in/telebot.v4"
+// )
 
-		searchBtn := menu.Data(config.SearchButton, "search")
-		exportBtn := menu.Data(config.ExportButton, "export")
-		bookmarkBtn := menu.Data(config.FavoritesButton, "bookmark")
-		accountManageBtn := menu.Data(config.AccountManagementButton, "account")
+// func MenuHandler(b *Bot) func(c telebot.Context) error {
+// 	return func(c telebot.Context) error {
+// 		menu := &telebot.ReplyMarkup{}
 
-		menu.Inline(
-			menu.Row(searchBtn, accountManageBtn),
-			menu.Row(exportBtn, bookmarkBtn),
-		)
+// 		searchBtn := menu.Data(constants.SearchButton, "search")
+// 		exportBtn := menu.Data(constants.ExportButton, "export")
+// 		bookmarkBtn := menu.Data(constants.FavoritesButton, "bookmark")
+// 		accountManageBtn := menu.Data(constants.AccountManagementButton, "account")
 
-		return c.EditOrSend("یکی از گزینه های زیر را انتخاب کنید", menu)
-	}
-}
+// 		menu.Inline(
+// 			menu.Row(searchBtn, accountManageBtn),
+// 			menu.Row(exportBtn, bookmarkBtn),
+// 		)
+
+// 		return c.EditOrSend("یکی از گزینه های زیر را انتخاب کنید", menu)
+// 	}
+// }

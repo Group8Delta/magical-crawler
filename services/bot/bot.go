@@ -2,14 +2,15 @@ package bot
 
 import (
 	"log"
+	"magical-crwler/constants"
 	"time"
 
 	"gopkg.in/telebot.v4"
 )
 
 type Bot struct {
-	bot    *telebot.Bot
-	config BotConfig
+	Bot    *telebot.Bot
+	Config BotConfig
 }
 type BotConfig struct {
 	Token  string
@@ -25,16 +26,25 @@ func NewBot(config BotConfig) (*Bot, error) {
 		log.Fatalln(err.Error())
 	}
 	return &Bot{
-		bot:    bot,
-		config: config,
+		Bot:    bot,
+		Config: config,
 	}, nil
+}
+
+func (b *Bot) RegisterHandlers() {
+	b.Bot.Handle("/menu", MainMenuHandler)
+	b.Bot.Handle("/start", StartHandler(b))
+	b.Bot.Handle(&telebot.Btn{Unique: "export"}, ExportHandler(b))
+	b.Bot.Handle(constants.FiltersButton, FilterHandlers(b))
+	b.Bot.Handle("/exportFile", ExportHandler(b))
+	b.Bot.Handle(&telebot.Btn{Unique: "export"}, ExportHandler(b))
+	b.Bot.Handle(&telebot.Btn{Unique: "export_csv"}, export_csv_Handler(b))
+	b.Bot.Handle(&telebot.Btn{Unique: "export_xlsx"}, export_xlsx_Handler(b))
 }
 
 func (b *Bot) StartBot() {
 	log.Print("Bot is running !")
-	RegisterHanlders(b)
-
-	// b.bot.Handle("/start", StartHandler(b))
-	// b.bot.Handle(config.FiltersButton, FilterHandlers(b))
-	b.bot.Start()
+	b.RegisterHandlers()
+	b.Bot.Start()
+	b.Bot.Start()
 }
