@@ -9,8 +9,8 @@ import (
 )
 
 type Bot struct {
-	bot    *telebot.Bot
-	config BotConfig
+	Bot    *telebot.Bot
+	Config BotConfig
 }
 type BotConfig struct {
 	Token  string
@@ -26,19 +26,21 @@ func NewBot(config BotConfig) (*Bot, error) {
 		log.Fatalln(err.Error())
 	}
 	return &Bot{
-		bot:    bot,
-		config: config,
+		Bot:    bot,
+		Config: config,
 	}, nil
 }
 
 func (b *Bot) RegisterHandlers() {
-	b.bot.Handle("/start", StartHandler(b))
-	b.bot.Handle(constants.SearchButton, FilterHandlers(b))
-	b.bot.Handle("/exportFile", ExportHandler(b))
+	b.Bot.Handle("/start", StartHandler(b))
+	b.Bot.Handle("/menu", MainMenuHandler)
+	b.Bot.Handle(constants.SearchButton, FilterHandlers(b))
+	b.Bot.Handle("/exportFile", ExportHandler(b))
 }
 
 func (b *Bot) StartBot() {
 	log.Print("Bot is running !")
 	b.RegisterHandlers()
-	b.bot.Start()
+	b.Bot.Start()
+	b.Bot.Start()
 }
