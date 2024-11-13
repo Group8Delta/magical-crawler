@@ -19,12 +19,12 @@ func StartHandler(b *Bot, db *gorm.DB) func(ctx telebot.Context) error {
 		var (
 			menu = &telebot.ReplyMarkup{ResizeKeyboard: true}
 
-			searchBtn   = menu.Text(config.SearchButton)
-			filtersBtn  = menu.Text(config.FiltersButton)
-			accountBtn  = menu.Text(config.AccountManagementButton)
-			exportBtn   = menu.Text(config.ExportButton)
-			bookmarkBtn = menu.Text(config.FavoritesButton)
-			adminPnlBtn = menu.Text(config.AdminPanelButton)
+			searchBtn   = menu.Text(constants.SearchButton)
+			filtersBtn  = menu.Text(constants.FiltersButton)
+			accountBtn  = menu.Text(constants.AccountManagementButton)
+			exportBtn   = menu.Text(constants.ExportButton)
+			bookmarkBtn = menu.Text(constants.FavoritesButton)
+			adminPnlBtn = menu.Text(constants.AdminPanelButton)
 		)
 		//TODO: move to main
 		if models.IsSuperAdmin(db, user.ID) {
@@ -41,6 +41,6 @@ func StartHandler(b *Bot, db *gorm.DB) func(ctx telebot.Context) error {
 			)
 		}
 
-		return ctx.Send(config.WelcomeMsg, menu)
+		return ctx.Send(constants.WelcomeMsg, menu)
 	}
 }

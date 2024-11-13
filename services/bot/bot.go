@@ -3,7 +3,6 @@ package bot
 import (
 	"fmt"
 	"log"
-	"magical-crwler/config"
 	"magical-crwler/constants"
 	"magical-crwler/services/notification"
 	"strconv"
@@ -60,9 +59,9 @@ func (b *Bot) RegisterHandlers(db *gorm.DB) {
 	b.Bot.Handle(&telebot.Btn{Unique: "export"}, ExportHandler(b))
 	b.Bot.Handle(&telebot.Btn{Unique: "export_csv"}, export_csv_Handler(b))
 	b.Bot.Handle(&telebot.Btn{Unique: "export_xlsx"}, export_xlsx_Handler(b))
-	b.Bot.Handle(config.AdminPanelButton, AdminHandler(b))
-	b.Bot.Handle(config.AddAdminButton, AddAdminHandler(b, db))
-	b.Bot.Handle(config.RemoveAdminButton, RemoveAdminHandler(b, db))
+	b.Bot.Handle(constants.AdminPanelButton, AdminHandler(b))
+	b.Bot.Handle(constants.AddAdminButton, AddAdminHandler(b, db))
+	b.Bot.Handle(constants.RemoveAdminButton, RemoveAdminHandler(b, db))
 }
 
 func (b *Bot) StartBot(db *gorm.DB) {
