@@ -46,7 +46,8 @@ func (f *Filters) removeAllValue() {
 	f.location.value = ""
 }
 
-func (f *Filters) Message() (msg string) {
+func (f *Filters) Message() string {
+	var msg string
 	msg += fmt.Sprintf("%s\t:\t%s\n", f.price.button.Text, f.price.value)
 	msg += fmt.Sprintf("%s\t:\t%s\n", f.area.button.Text, f.area.value)
 	msg += fmt.Sprintf("%s\t:\t%s\n", f.rooms.button.Text, f.rooms.value)
@@ -58,7 +59,7 @@ func (f *Filters) Message() (msg string) {
 	msg += fmt.Sprintf("%s\t:\t%s\n", f.adDate.button.Text, f.adDate.value)
 	msg += fmt.Sprintf("%s\t:\t%s\n", f.location.button.Text, f.location.value)
 
-	return
+	return msg
 }
 
 func FilterHandlers(b *Bot) func(ctx telebot.Context) error {
