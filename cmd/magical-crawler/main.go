@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"magical-crwler/config"
 	"magical-crwler/services/bot"
 	"time"
 )
@@ -23,7 +24,7 @@ func main() {
 	// }
 	// I commented on this part because it needs a VPN to run
 	bot, err := bot.NewBot(bot.BotConfig{
-		Token:  "7613959952:AAFGj8EbkaTqgih0Eh_xjoHiLS2iExyL7PU",
+		Token:  config.Token,
 		Poller: 10 * time.Second,
 	})
 	if err != nil {

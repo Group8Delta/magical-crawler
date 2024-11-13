@@ -13,9 +13,10 @@ func MenuHandler(b *Bot) func(c telebot.Context) error {
 		searchBtn := menu.Data(config.SearchButton, "search")
 		exportBtn := menu.Data(config.ExportButton, "export")
 		bookmarkBtn := menu.Data(config.FavoritesButton, "bookmark")
+		accountManageBtn := menu.Data(config.AccountManagementButton, "account")
 
 		menu.Inline(
-			menu.Row(searchBtn),
+			menu.Row(searchBtn, accountManageBtn),
 			menu.Row(exportBtn, bookmarkBtn),
 		)
 
