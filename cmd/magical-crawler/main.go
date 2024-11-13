@@ -67,7 +67,7 @@ func initialCrawlers(config *config.Config, repo *database.Repository, alerter *
 
 func runCrawlers(c *config.Config, repo *database.Repository, maxDeepth int, alerter *alerting.Alerter) {
 	for _, v := range crawler.CrawlerTypes {
-		crawler, err := crawler.New(v, c, maxDeepth, alerter)
+		crawler, err := crawler.New(v, c, repo, maxDeepth, alerter)
 		if err != nil {
 			panic("Failed to initial Crawler: " + err.Error())
 		}

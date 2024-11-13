@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"log"
 	"magical-crwler/config"
+	"magical-crwler/database"
 	"magical-crwler/services/alerting"
 	"magical-crwler/utils"
 	"net/http"
@@ -36,9 +37,10 @@ type SheypoorContractResponse struct {
 }
 
 type SheypoorCrawler struct {
-	config    *config.Config
-	maxDeepth int
-	alerter   *alerting.Alerter
+	config       *config.Config
+	dbRepository database.IRepository
+	maxDeepth    int
+	alerter      *alerting.Alerter
 }
 
 func (c *SheypoorCrawler) CrawlAdsLinks(ctx context.Context, url string) ([]string, error) {
@@ -345,13 +347,20 @@ func (c *SheypoorCrawler) RunCrawler() {
 			wp := NewWorkerPool(v, numberOfCrawlerWorkers, c)
 
 			wp.Start(ctx)
-			wp.GetResults()
+			results := wp.GetResults()
 			errors := wp.GetErrors()
 
 			for _, v := range errors {
 				c.alerter.SendAlert(&alerting.Alert{Title: "sheypoor crawler error", Content: v.String()})
 
 				fmt.Println(v.Err.Error())
+			}
+
+			for _, v := range results {
+				err := SaveAdData(c.dbRepository, v.Ad)
+				if err != nil {
+					log.Printf("error in save ad data: %s\n", err.Error())
+				}
 			}
 
 			cancel()

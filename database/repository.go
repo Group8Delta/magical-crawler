@@ -12,6 +12,11 @@ type IRepository interface {
 	GetFilterById(id int) (models.Filter, error)
 	UpdateFilter(filter Dtos.FilterDto) (models.Filter, error)
 	DeleteFilter(id int)
+	GetAdByLink(link string) (*models.Ad, error)
+	CreateAd(ad Dtos.AdDto) *models.Ad
+	UpdateAd(ad Dtos.AdDto) (*models.Ad, error)
+	CreatePriceHistory(ph Dtos.PriceHistoryDto) *models.PriceHistory
+	GetAdminUsers() ([]*models.User, error)
 }
 
 type Repository struct {
@@ -76,13 +81,13 @@ func (r *Repository) DeleteFilter(id int) {
 	r.db.GetDb().Where("ID = ?", id).Delete(&models.Filter{})
 }
 
-func (r *Repository) GetAdByLink(link string) (models.Ad, error) {
+func (r *Repository) GetAdByLink(link string) (*models.Ad, error) {
 	ad := models.Ad{}
 	res := r.db.GetDb().Where("link = ?", link).First(&ad)
-	return ad, res.Error
+	return &ad, res.Error
 }
 
-func (r *Repository) CreateAd(ad Dtos.AdDto) models.Ad {
+func (r *Repository) CreateAd(ad Dtos.AdDto) *models.Ad {
 	adm := models.Ad{
 		Link:          ad.Link,
 		PhotoUrl:      ad.PhotoUrl,
@@ -105,14 +110,14 @@ func (r *Repository) CreateAd(ad Dtos.AdDto) models.Ad {
 	}
 
 	r.db.GetDb().Create(&adm)
-	return adm
+	return &adm
 }
 
-func (r *Repository) UpdateAd(ad Dtos.AdDto) (models.Ad, error) {
+func (r *Repository) UpdateAd(ad Dtos.AdDto) (*models.Ad, error) {
 	a := models.Ad{}
 	res := r.db.GetDb().Where("id = ?", ad.ID).First(&a)
 	if res.Error != nil {
-		return a, res.Error
+		return &a, res.Error
 	}
 
 	a.Link = ad.Link
@@ -133,10 +138,10 @@ func (r *Repository) UpdateAd(ad Dtos.AdDto) (models.Ad, error) {
 	a.IsApartment = ad.IsApartment
 	a.Floor = ad.Floor
 	r.db.GetDb().Save(&a)
-	return a, nil
+	return &a, nil
 }
 
-func (r *Repository) CreatePriceHistory(ph Dtos.PriceHistoryDto) models.PriceHistory {
+func (r *Repository) CreatePriceHistory(ph Dtos.PriceHistoryDto) *models.PriceHistory {
 	p := models.PriceHistory{
 		AdID:        ph.AdID,
 		Price:       ph.Price,
@@ -145,7 +150,7 @@ func (r *Repository) CreatePriceHistory(ph Dtos.PriceHistoryDto) models.PriceHis
 	}
 
 	r.db.GetDb().Create(&p)
-	return p
+	return &p
 }
 
 func (r *Repository) GetAdminUsers() ([]*models.User, error) {
