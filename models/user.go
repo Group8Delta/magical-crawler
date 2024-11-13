@@ -1,19 +1,18 @@
 package models
 
 import (
-	"log"
-
 	"gorm.io/gorm"
 )
 
 type User struct {
 	ID           uint
+	TelegramID   uint `gorm:"uniqueIndex;not null"`
 	FirstName    string
 	LastName     string
 	Email        *string
 	PasswordHash *string
 	RoleID       uint
-	Role         *Role `gorm:"constraint:OnDelete:SET NULL;"`
+	Role         Role `gorm:"constraint:OnDelete:SET NULL;"`
 	Bookmarks    []Bookmark
 	Filters      []UserFilter
 	FilteredAds  []FilteredAd
