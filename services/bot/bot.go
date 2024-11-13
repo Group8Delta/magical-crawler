@@ -44,7 +44,7 @@ func (b *Bot) Notify(recipientIdentifier string, m *notification.Message) error 
 	}
 	recipient := telebot.ChatID(teleUserId)
 	message := fmt.Sprintf("%s \n\n %s", m.Title, m.Content)
-	_, err = b.bot.Send(recipient, message)
+	_, err = b.Bot.Send(recipient, message)
 	if err != nil {
 		return err
 	}
@@ -53,16 +53,16 @@ func (b *Bot) Notify(recipientIdentifier string, m *notification.Message) error 
 }
 func (b *Bot) RegisterHandlers(db *gorm.DB) {
 	b.Bot.Handle("/menu", MainMenuHandler)
-	b.Bot.Handle("/start", StartHandler(b))
+	b.Bot.Handle("/start", StartHandler(b, db))
 	b.Bot.Handle(&telebot.Btn{Unique: "export"}, ExportHandler(b))
 	b.Bot.Handle(constants.FiltersButton, FilterHandlers(b))
 	b.Bot.Handle("/exportFile", ExportHandler(b))
 	b.Bot.Handle(&telebot.Btn{Unique: "export"}, ExportHandler(b))
 	b.Bot.Handle(&telebot.Btn{Unique: "export_csv"}, export_csv_Handler(b))
 	b.Bot.Handle(&telebot.Btn{Unique: "export_xlsx"}, export_xlsx_Handler(b))
-	b.bot.Handle(config.AdminPanelButton, AdminHandler(b))
-	b.bot.Handle(config.AddAdminButton, AddAdminHandler(b, db))
-	b.bot.Handle(config.RemoveAdminButton, RemoveAdminHandler(b, db))
+	b.Bot.Handle(config.AdminPanelButton, AdminHandler(b))
+	b.Bot.Handle(config.AddAdminButton, AddAdminHandler(b, db))
+	b.Bot.Handle(config.RemoveAdminButton, RemoveAdminHandler(b, db))
 }
 
 func (b *Bot) StartBot(db *gorm.DB) {

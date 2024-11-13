@@ -5,7 +5,6 @@ import (
 	"log"
 	"magical-crwler/config"
 	"magical-crwler/database"
-	"magical-crwler/models"
 	"magical-crwler/services/alerting"
 	"magical-crwler/services/bot"
 	"magical-crwler/services/crawler"
@@ -16,11 +15,11 @@ import (
 func main() {
 	conf := config.GetConfig()
 
-	database := database.New()
-	database.Init(conf)
-	defer database.Close()
+	dbService := database.New()
+	dbService.Init(conf)
+	defer dbService.Close()
 
-	db, err := database.GetDb().DB()
+	db, err := dbService.GetDb().DB()
 	if err != nil {
 		fmt.Println("database connection error", err)
 		os.Exit(1)
@@ -32,8 +31,9 @@ func main() {
 		os.Exit(1)
 
 	}
+	repo := database.NewRepository(dbService)
 
-	err = setAdminUserIds(database)
+	err = setAdminUserIds(repo)
 	fmt.Println(config.AdminUserIds)
 	if err != nil {
 		fmt.Println("set admins had error:", err)
@@ -51,21 +51,21 @@ func main() {
 	alerter := alerting.NewAlerter(conf, bot)
 	alerter.RunAdminNotifier()
 
-	initialCrawlers(conf, database, alerter)
+	initialCrawlers(conf, repo, alerter)
 
-	bot.StartBot()
+	bot.StartBot(dbService.GetDb())
 	// http.ListenAndServe(":"+config.Port, nil)
 }
 
-func initialCrawlers(config *config.Config, database database.DbService, alerter *alerting.Alerter) {
-	runIncrementalCrawl(config, database, alerter)
+func initialCrawlers(config *config.Config, repo *database.Repository, alerter *alerting.Alerter) {
+	runIncrementalCrawl(config, repo, alerter)
 	if config.EnableFullCrawl {
-		runCrawlers(config, 0, alerter)
+		runCrawlers(config, repo, 0, alerter)
 		fmt.Println("full crawl started")
 	}
 }
 
-func runCrawlers(c *config.Config, maxDeepth int, alerter *alerting.Alerter) {
+func runCrawlers(c *config.Config, repo *database.Repository, maxDeepth int, alerter *alerting.Alerter) {
 	for _, v := range crawler.CrawlerTypes {
 		crawler, err := crawler.New(v, c, maxDeepth, alerter)
 		if err != nil {
@@ -75,7 +75,7 @@ func runCrawlers(c *config.Config, maxDeepth int, alerter *alerting.Alerter) {
 
 	}
 }
-func runIncrementalCrawl(c *config.Config, database database.DbService, alerter *alerting.Alerter) {
+func runIncrementalCrawl(c *config.Config, repo *database.Repository, alerter *alerting.Alerter) {
 	go func() {
 		ticker := time.NewTicker(2 * time.Hour)
 		defer ticker.Stop()
@@ -83,24 +83,21 @@ func runIncrementalCrawl(c *config.Config, database database.DbService, alerter 
 		for {
 			select {
 			case <-ticker.C:
-				err := setAdminUserIds(database)
+				err := setAdminUserIds(repo)
 				if err != nil {
 					fmt.Println("set admins had error:", err)
 				}
-				runCrawlers(c, 1, alerter)
+				runCrawlers(c, repo, 1, alerter)
 
 			}
 		}
 	}()
 }
 
-func setAdminUserIds(database database.DbService) error {
-	gormDb := database.GetDb()
-
-	var users []*models.User
-	result := gormDb.Where("role_id < ?", "3").Find(&users)
-	if result.Error != nil {
-		return result.Error
+func setAdminUserIds(repo *database.Repository) error {
+	users, err := repo.GetAdminUsers()
+	if err != nil {
+		return err
 	}
 	config.AdminUserIds = []int{}
 	for _, v := range users {

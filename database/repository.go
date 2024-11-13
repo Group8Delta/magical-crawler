@@ -148,6 +148,16 @@ func (r *Repository) CreatePriceHistory(ph Dtos.PriceHistoryDto) models.PriceHis
 	return p
 }
 
+func (r *Repository) GetAdminUsers() ([]*models.User, error) {
+	var users []*models.User
+
+	result := r.db.GetDb().Where("role_id < ?", "3").Find(&users)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return users, nil
+}
+
 func NewRepository(db DbService) *Repository {
 	return &Repository{db: db}
 }
