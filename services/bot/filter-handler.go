@@ -1,5 +1,7 @@
 package bot
 
+// TODO: change name to search-handler
+
 import (
 	"fmt"
 	"magical-crwler/constants"
@@ -26,6 +28,11 @@ type FilterValue struct {
 	subButton []telebot.Btn
 }
 
+// TODO: return type must change to Ads models
+func (f *Filters) startSearch() []interface{} {
+
+	return nil
+}
 func (f *Filters) removeAllValue() {
 	f.price.value = ""
 	f.area.value = ""
@@ -54,10 +61,6 @@ func (f *Filters) Message() (msg string) {
 	return
 }
 
-func (f *Filters) startSearch() []interface{} {
-	return nil
-}
-
 func FilterHandlers(b *Bot) func(ctx telebot.Context) error {
 
 	var (
@@ -70,6 +73,7 @@ func FilterHandlers(b *Bot) func(ctx telebot.Context) error {
 		floorSelector    = &telebot.ReplyMarkup{RemoveKeyboard: true}
 		ynSelector       = &telebot.ReplyMarkup{RemoveKeyboard: true}
 		adDateSelector   = &telebot.ReplyMarkup{RemoveKeyboard: true}
+		locationSelector = &telebot.ReplyMarkup{RemoveKeyboard: true}
 
 		YNButtons = []telebot.Btn{
 			ynSelector.Data(constants.Yes, "YesNo", constants.Yes, "1"),
@@ -208,17 +212,23 @@ func FilterHandlers(b *Bot) func(ctx telebot.Context) error {
 			adDate: FilterValue{button: menuSelector.Data(constants.AdDateFilter, "Filters", "AdDate"),
 				value: "",
 				subButton: []telebot.Btn{
-					adDateSelector.Data(constants.TimeToday, "Time"),
-					adDateSelector.Data(constants.Time1DayAgo, "Time"),
-					adDateSelector.Data(constants.Time2DaysAgo, "Time"),
-					adDateSelector.Data(constants.Time3DaysAgo, "Time"),
-					adDateSelector.Data(constants.Time1WeekAgo, "Time"),
-					adDateSelector.Data(constants.Time1MonthAgo, "Time"),
-					adDateSelector.Data(constants.Time1YearAgo, "Time"),
+					adDateSelector.Data(constants.TimeToday, "Time", constants.TimeToday),
+					adDateSelector.Data(constants.Time1DayAgo, "Time", constants.Time1DayAgo),
+					adDateSelector.Data(constants.Time2DaysAgo, "Time", constants.Time2DaysAgo),
+					adDateSelector.Data(constants.Time3DaysAgo, "Time", constants.Time3DaysAgo),
+					adDateSelector.Data(constants.Time1WeekAgo, "Time", constants.Time1WeekAgo),
+					adDateSelector.Data(constants.Time1MonthAgo, "Time", constants.Time1MonthAgo),
+					adDateSelector.Data(constants.Time1YearAgo, "Time", constants.Time1YearAgo),
 				},
 			},
 			location: FilterValue{button: menuSelector.Data(constants.LocationFilter, "Filters", "Location"),
 				value: "",
+				subButton: []telebot.Btn{
+					locationSelector.Data(constants.Tehran, "City", constants.Tehran),
+					locationSelector.Data(constants.Esfahan, "City", constants.Esfahan),
+					locationSelector.Data(constants.Mashhad, "City", constants.Mashhad),
+					locationSelector.Data(constants.Shiraz, "City", constants.Shiraz),
+				},
 			},
 		}
 	)
@@ -240,6 +250,7 @@ func FilterHandlers(b *Bot) func(ctx telebot.Context) error {
 	floorSelector.Inline(menuSelector.Split(3, filters.floor.subButton)...)
 	ynSelector.Inline(menuSelector.Split(3, YNButtons)...)
 	adDateSelector.Inline(menuSelector.Split(2, filters.adDate.subButton)...)
+	locationSelector.Inline(menuSelector.Split(4, filters.location.subButton)...)
 
 	// Buttons Handlers
 	b.Bot.Handle(&telebot.InlineButton{Unique: "Filters"}, func(ctx telebot.Context) error {
@@ -300,14 +311,17 @@ func FilterHandlers(b *Bot) func(ctx telebot.Context) error {
 			})
 			return ctx.EditOrSend(filters.Message(), adDateSelector)
 		case "Location":
-			b.Bot.Handle(telebot.OnText, func(c telebot.Context) error {
-
+			b.Bot.Handle(&telebot.InlineButton{Unique: "City"}, func(c telebot.Context) error {
+				filters.location.value = c.Data()
 				return c.EditOrSend(filters.Message(), menuSelector)
 			})
-			return ctx.EditOrSend(filters.Message(), priceSelector)
+			return ctx.EditOrSend(filters.Message(), locationSelector)
 		case "Search":
 			ctx.Send(constants.Loading)
 			ads := filters.startSearch()
+			for _, ad := range ads {
+				ctx.Send(ad)
+			}
 			return ctx.Send(constants.SearchMsg)
 		case "Remove":
 			filters.removeAllValue()

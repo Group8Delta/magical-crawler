@@ -167,10 +167,19 @@ const (
 	FloorOver10 = "بالاتر از ۱۰ طبقه"
 )
 
+// Yes No answer
 const (
 	Yes     = "بله"
 	No      = "خیر"
 	Unknown = "مهم نیست"
+)
+
+// Cities
+const (
+	Tehran  = "تهران"
+	Esfahan = "اصفهان"
+	Mashhad = "مشهد"
+	Shiraz  = "شیراز"
 )
 
 // Account Management Menu
