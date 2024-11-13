@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	// config := config.GetConfig()
+	config := config.GetConfig()
 
 	// database := database.New()
 	// database.Init(config)
@@ -24,7 +24,7 @@ func main() {
 	// }
 	// I commented on this part because it needs a VPN to run
 	bot, err := bot.NewBot(bot.BotConfig{
-		Token:  config.Token,
+		Token:  config.BotToken,
 		Poller: 10 * time.Second,
 	})
 	if err != nil {
