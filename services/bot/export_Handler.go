@@ -19,7 +19,7 @@ func ExportHandler(b *Bot) func(c telebot.Context) error {
 			exportMenu.Row(xlsxBtn, csvBtn),
 		)
 
-		return c.Send("یکی از گزینه های زیر را برای دریافت فایل انتخاب کنید", exportMenu)
+		return c.EditOrSend("یکی از گزینه های زیر را برای دریافت فایل انتخاب کنید", exportMenu)
 	}
 }
 

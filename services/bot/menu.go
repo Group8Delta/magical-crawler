@@ -20,6 +20,6 @@ func MenuHandler(b *Bot) func(c telebot.Context) error {
 			menu.Row(exportBtn, bookmarkBtn),
 		)
 
-		return c.Send("یکی از گزینه های زیر را انتخاب کنید", menu)
+		return c.EditOrSend("یکی از گزینه های زیر را انتخاب کنید", menu)
 	}
 }
