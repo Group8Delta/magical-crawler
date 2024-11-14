@@ -15,8 +15,9 @@ const (
 
 //export buttons
 const (
-	ExportXLSX = "xslx(اکسل)"
-	ExportCSV  = "csv"
+	ExportXLSX    = "xslx(اکسل)"
+	ExportCSV     = "csv"
+	ExportBtnInfo = "یکی از گزینه های زیر را برای دریافت فایل انتخاب کنید"
 )
 
 // Search Menu

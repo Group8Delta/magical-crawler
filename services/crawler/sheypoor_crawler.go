@@ -341,7 +341,7 @@ func (c *SheypoorCrawler) RunCrawler() {
 
 			wp := NewWorkerPool(v, numberOfCrawlerWorkers, c)
 
-			wp.Start()
+			// wp.Start()
 			wp.GetResults()
 			errors := wp.GetErrors()
 
