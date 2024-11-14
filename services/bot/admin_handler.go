@@ -1,10 +1,12 @@
 package bot
 
 import (
+	"fmt"
 	"log"
 	"magical-crwler/constants"
 	"magical-crwler/services/admin"
 	"strconv"
+	"strings"
 
 	"gopkg.in/telebot.v4"
 	"gorm.io/gorm"
@@ -16,8 +18,9 @@ func AdminHandler(b *Bot) func(ctx telebot.Context) error {
 
 		addAdminBtn := menu.Text(constants.AddAdminButton)
 		removeAdminBtn := menu.Text(constants.RemoveAdminButton)
+		listAdminsBtn := menu.Text(constants.ListAdminsButton)
 
-		menu.Reply(menu.Row(addAdminBtn, removeAdminBtn))
+		menu.Reply(menu.Row(listAdminsBtn, removeAdminBtn, addAdminBtn))
 
 		return ctx.Send(constants.AdminActionMsg, menu)
 	}
@@ -81,4 +84,27 @@ func handleRemoveAdmin(ctx telebot.Context, db *gorm.DB) error {
 		return ctx.Reply("An error occurred while updating the user role.")
 	}
 	return ctx.Reply(constants.AdminRemovedMsg)
+}
+
+func AdminListHandler(b *Bot, db *gorm.DB) func(ctx telebot.Context) error {
+	return func(ctx telebot.Context) error {
+		adminService := admin.NewAdminService(db)
+		admins, err := adminService.ListAdmins()
+		if err != nil {
+			log.Println("Error retrieving admin list:", err)
+			return ctx.Reply("An error occurred while retrieving the admin list.")
+		}
+
+		if len(admins) == 0 {
+			return ctx.Reply(constants.EmptyAdminList)
+		}
+
+		var builder strings.Builder
+		builder.WriteString(fmt.Sprintf("%s:\n", constants.AdminList))
+		for _, admin := range admins {
+			builder.WriteString(fmt.Sprintf("%s: %d, %s: %s %s\n", constants.AdminID, admin.ID, constants.AdminName, admin.FirstName, admin.LastName))
+		}
+
+		return ctx.Reply(builder.String())
+	}
 }
