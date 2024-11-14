@@ -218,6 +218,7 @@ const (
 	ViewLogsButton         = "مشاهده لاگ‌ها"
 	AddAdminButton         = "افزودن ادمین"
 	RemoveAdminButton      = "حذف ادمین"
+	ListAdminsButton       = "لیست ادمین ها"
 	AddAdminQuestion       = "آیدی ادمینی که میخواهی اضافه کنی رو وارد کن"
 	RemoveAdminQuestion    = "آیدی ادمینی که میخواهی حذف کنی رو وارد کن"
 	AdminAddedMsg          = "ادمین با موفقیت اضافه شد"
@@ -226,6 +227,10 @@ const (
 	WrongUserIdFromat      = "لطفا آیدی یوزر رو بدرستی وارد کن"
 	AdminNotFound          = "ادمین پیدا نشد"
 	UserNotFound           = "کاربر پیدا نشد"
+	EmptyAdminList         = "لیست ادمین ها خالی است"
+	AdminList              = "لیست ادمین ها"
+	AdminID                = "آیدی"
+	AdminName              = "اسم"
 )
 
 // ‌Bot Messages

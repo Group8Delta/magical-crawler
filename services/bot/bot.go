@@ -3,6 +3,7 @@ package bot
 import (
 	"log"
 	"magical-crwler/constants"
+	"magical-crwler/models"
 	"time"
 
 	"gopkg.in/telebot.v4"
@@ -33,7 +34,14 @@ func NewBot(config BotConfig) (*Bot, error) {
 }
 
 func (b *Bot) RegisterHandlers(db *gorm.DB) {
-	b.Bot.Handle("/menu", MainMenuHandler)
+	b.Bot.Handle("/menu", func(ctx telebot.Context) error {
+
+		user, err := models.FindOrCreateUser(db, uint(ctx.Sender().ID), ctx.Sender().FirstName, ctx.Sender().LastName)
+		if err != nil {
+			return ctx.Reply("An error occurred while accessing the database.")
+		}
+		return MainMenuHandler(ctx, db, user)
+	})
 	b.Bot.Handle("/start", StartHandler(b, db))
 	b.Bot.Handle(&telebot.Btn{Unique: "export"}, ExportHandler(b))
 	b.Bot.Handle(constants.SearchButton, SearchHandlers(b))
@@ -44,6 +52,7 @@ func (b *Bot) RegisterHandlers(db *gorm.DB) {
 	b.Bot.Handle(constants.AdminPanelButton, AdminHandler(b))
 	b.Bot.Handle(constants.AddAdminButton, AddAdminHandler(b, db))
 	b.Bot.Handle(constants.RemoveAdminButton, RemoveAdminHandler(b, db))
+	b.Bot.Handle(constants.ListAdminsButton, AdminListHandler(b, db))
 }
 
 func (b *Bot) StartBot(db *gorm.DB) {
