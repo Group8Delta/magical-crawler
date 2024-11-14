@@ -1,10 +1,9 @@
 package bot
 
-// TODO: change name to search-handler
-
 import (
 	"fmt"
 	"magical-crwler/constants"
+	"magical-crwler/models"
 	"strings"
 
 	"gopkg.in/telebot.v4"
@@ -28,8 +27,7 @@ type FilterValue struct {
 	subButton []telebot.Btn
 }
 
-// TODO: return type must change to Ads models
-func (f *Filters) startSearch() []interface{} {
+func (f *Filters) startSearch() []models.Ad {
 
 	return nil
 }
