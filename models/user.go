@@ -14,7 +14,7 @@ type User struct {
 	RoleID       uint
 	Role         Role `gorm:"constraint:OnDelete:SET NULL;"`
 	Bookmarks    []Bookmark
-	Filters      []UserFilter
+	WatchLists   []WatchList
 	FilteredAds  []FilteredAd
 }
 
