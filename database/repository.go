@@ -11,6 +11,9 @@ type IRepository interface {
 	GetFilterById(id int) (models.Filter, error)
 	UpdateFilter(filter Dtos.FilterDto) (models.Filter, error)
 	DeleteFilter(id int)
+	// Log
+	AddLog(log models.Log)
+	//GetLogLevelByName(name string) (models.LogLevel, error)
 }
 
 type Repository struct {
@@ -74,6 +77,16 @@ func (r *Repository) UpdateFilter(filter Dtos.FilterDto) (models.Filter, error) 
 func (r *Repository) DeleteFilter(id int) {
 	r.db.GetDb().Where("ID = ?", id).Delete(&models.Filter{})
 }
+
+func (r *Repository) AddLog(log models.Log) {
+	log.ID = 0
+	r.db.GetDb().Create(&log)
+}
+
+//func (r *Repository) GetLogLevelByName(name string) (models.LogLevel, error) {
+//
+//	r.db.GetDb().Where("name = ?", name).First(&models.LogLevel{})
+//}
 
 func NewRepository(db DbService) *Repository {
 	return &Repository{db: db}
