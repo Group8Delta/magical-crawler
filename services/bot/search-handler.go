@@ -66,7 +66,7 @@ func newReplyMarkup() *telebot.ReplyMarkup {
 	return &telebot.ReplyMarkup{RemoveKeyboard: true, ResizeKeyboard: true}
 }
 
-func FilterHandlers(b *Bot) func(ctx telebot.Context) error {
+func SearchHandlers(b *Bot) func(ctx telebot.Context) error {
 
 	var (
 		selector = map[string]*telebot.ReplyMarkup{
