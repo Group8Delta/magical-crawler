@@ -21,10 +21,8 @@ import (
 )
 
 var divar_search_urls = []string{
-	"https://divar.ir/s/isfahan/buy-apartment",
-	"https://divar.ir/s/isfahan/buy-villa",
-	"https://divar.ir/s/isfahan/rent-apartment",
-	"https://divar.ir/s/isfahan/rent-villa",
+	"https://divar.ir/s/khorramdarreh/buy-residential",
+	"https://divar.ir/s/khorramdarreh/rent-residential",
 }
 
 type DivarCrawler struct {
@@ -38,8 +36,6 @@ func (c *DivarCrawler) CrawlAdsLinks(ctx context.Context, url string) ([]string,
 	ctx, cancel := chromedp.NewContext(ctx)
 	defer cancel()
 
-	ctx, cancel = context.WithTimeout(ctx, 100*time.Second)
-	defer cancel()
 	select {
 	case <-ctx.Done():
 		return make([]string, 0), errors.New("time-out")
@@ -137,9 +133,6 @@ func (c *DivarCrawler) CrawlAdsLinks(ctx context.Context, url string) ([]string,
 func (c *DivarCrawler) CrawlPageUrl(ctx context.Context, pageUrl string) (*Ad, error) {
 	ctx, cancel := chromedp.NewContext(ctx)
 	defer cancel()
-
-	ctx, cancel = context.WithTimeout(ctx, 100*time.Second)
-	defer cancel()
 	select {
 	case <-ctx.Done():
 		return nil, errors.New("time-out")
@@ -152,17 +145,10 @@ func (c *DivarCrawler) CrawlPageUrl(ctx context.Context, pageUrl string) (*Ad, e
 				panicErr = fmt.Errorf("recovered from panic in CrawlPageUrl: %v", r)
 			}
 		}()
-		// Create a new context for Chrome
-		ctx, cancel := chromedp.NewContext(context.Background())
-		defer cancel()
-
-		// Set timeout for the context
-		ctx, cancel = context.WithTimeout(ctx, 100*time.Second)
-		defer cancel()
 
 		// Variables to store extracted data
 		var Title string
-		var Link string = pageUrl
+		ad.Link = pageUrl
 		var PhotoUrl string
 		var SellerContact string
 		var Description string
@@ -307,7 +293,7 @@ func (c *DivarCrawler) CrawlPageUrl(ctx context.Context, pageUrl string) (*Ad, e
 		)
 
 		if err != nil {
-			return nil, err
+			return &ad, err
 		}
 
 		for _, v := range details {
@@ -414,7 +400,6 @@ func (c *DivarCrawler) CrawlPageUrl(ctx context.Context, pageUrl string) (*Ad, e
 		ad.City = City
 		ad.Neighborhood = Neighborhood
 
-		ad.Link = Link
 		ad.PhotoUrl = PhotoUrl
 
 		floor, err := utils.PersianToEnglishDigits((Floor))
@@ -453,7 +438,7 @@ func (c *DivarCrawler) CrawlPageUrl(ctx context.Context, pageUrl string) (*Ad, e
 func (c *DivarCrawler) RunCrawler() {
 	go func() {
 		for _, v := range divar_search_urls {
-			ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second*500)
 
 			wp := NewWorkerPool(v, numberOfCrawlerWorkers, c)
 

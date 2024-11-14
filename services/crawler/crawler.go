@@ -8,6 +8,8 @@ import (
 	"magical-crwler/models/Dtos"
 	"magical-crwler/services/alerting"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 type CrawlerType string
@@ -16,7 +18,7 @@ const (
 	DivarCrawlerType    CrawlerType = "divar_crawler"
 	SheypoorCrawlerType CrawlerType = "sheypoor_crawler"
 )
-const numberOfCrawlerWorkers = 2
+const numberOfCrawlerWorkers = 5
 
 var CrawlerTypes []CrawlerType = []CrawlerType{
 	DivarCrawlerType,
@@ -41,11 +43,11 @@ func New(crawlerType CrawlerType, config *config.Config, d *database.Repository,
 }
 func SaveAdData(repo database.IRepository, ad *Ad) error {
 	a, err := repo.GetAdByLink(ad.Link)
-	if err != nil {
+	if err != nil && err != gorm.ErrRecordNotFound {
 		return err
 	}
 
-	if a == nil {
+	if err == gorm.ErrRecordNotFound {
 		price := int64(ad.Price)
 		rprice := int(ad.RentPrice)
 		size := int(ad.Size)

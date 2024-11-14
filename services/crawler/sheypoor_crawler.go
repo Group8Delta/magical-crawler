@@ -44,7 +44,8 @@ type SheypoorCrawler struct {
 }
 
 func (c *SheypoorCrawler) CrawlAdsLinks(ctx context.Context, url string) ([]string, error) {
-
+	ctx, cancel := chromedp.NewContext(ctx)
+	defer cancel()
 	select {
 	case <-ctx.Done():
 		return make([]string, 0), errors.New("time-out")
@@ -109,7 +110,7 @@ func (c *SheypoorCrawler) CrawlAdsLinks(ctx context.Context, url string) ([]stri
 		}
 
 		links := []string{}
-		doc.Find(`a[class="flex h-auto desktop:h-full desktop:flex-col desktop:border-b-0 desktop:pb-0 flex-row-reverse border-b-[1px] border-dark-4 pb-4 flex-col border-none"]`).Each(func(i int, s *goquery.Selection) {
+		doc.Find(`a[class="flex h-auto desktop:flex-col desktop:border-b-0 desktop:pb-0 flex-row-reverse border-b-[1px] border-dark-4 pb-4 flex-col border-none"]`).Each(func(i int, s *goquery.Selection) {
 			href, exists := s.Attr("href")
 			if exists && strings.Contains(href, ".html") {
 				links = append(links, "https://www.sheypoor.com"+href)
@@ -122,10 +123,13 @@ func (c *SheypoorCrawler) CrawlAdsLinks(ctx context.Context, url string) ([]stri
 }
 
 func (c *SheypoorCrawler) CrawlPageUrl(ctx context.Context, pageUrl string) (*Ad, error) {
+	ctx, cancel := chromedp.NewContext(ctx)
+	defer cancel()
 	select {
 	case <-ctx.Done():
 		return nil, errors.New("time-out")
 	default:
+
 		var ad Ad = Ad{}
 		var panicError error
 		defer func() {
@@ -137,7 +141,7 @@ func (c *SheypoorCrawler) CrawlPageUrl(ctx context.Context, pageUrl string) (*Ad
 
 		// Variables to store extracted data
 		var Title string
-		var Link string = pageUrl
+		ad.Link = pageUrl
 		var PhotoUrl string
 		var SellerContact string
 
@@ -162,30 +166,81 @@ func (c *SheypoorCrawler) CrawlPageUrl(ctx context.Context, pageUrl string) (*Ad
 		err := chromedp.Run(ctx,
 			chromedp.Navigate(pageUrl),
 			chromedp.Sleep(500*time.Microsecond),
-			chromedp.Text(`h1[class*="mjNIv"]`, &Title, chromedp.NodeVisible),
-			chromedp.AttributeValue(`div.swiper-slide.swiper-slide-active.U2WwT.ylynI img`, "src", &PhotoUrl, nil, chromedp.ByQuery),
-			chromedp.Text(`div[class*="MQJ5W"]`, &Description, chromedp.NodeVisible),
+			// Check for Title existence and then retrieve it
 			chromedp.ActionFunc(func(ctx context.Context) error {
 				var nodes []*cdp.Node
-				err := chromedp.Run(ctx,
-					chromedp.Nodes(`span.l29r1 strong`, &nodes, chromedp.AtLeast(0)),
-				)
-				if err != nil {
+				if err := chromedp.Nodes(`h1[class*="mjNIv"]`, &nodes, chromedp.AtLeast(0)).Do(ctx); err != nil {
 					return err
 				}
+				if len(nodes) > 0 {
+					return chromedp.Text(`h1[class*="mjNIv"]`, &Title, chromedp.NodeVisible).Do(ctx)
+				}
+				return nil
+			}),
 
+			// Check for Photo URL existence and then retrieve it
+			chromedp.ActionFunc(func(ctx context.Context) error {
+				var nodes []*cdp.Node
+				if err := chromedp.Nodes(`div.swiper-slide.swiper-slide-active.U2WwT.ylynI img`, &nodes, chromedp.AtLeast(0)).Do(ctx); err != nil {
+					return err
+				}
+				if len(nodes) > 0 {
+					return chromedp.AttributeValue(`div.swiper-slide.swiper-slide-active.U2WwT.ylynI img`, "src", &PhotoUrl, nil, chromedp.ByQuery).Do(ctx)
+				}
+				return nil
+			}),
+
+			// Check for Description existence and then retrieve it
+			chromedp.ActionFunc(func(ctx context.Context) error {
+				var nodes []*cdp.Node
+				if err := chromedp.Nodes(`div[class*="MQJ5W"]`, &nodes, chromedp.AtLeast(0)).Do(ctx); err != nil {
+					return err
+				}
+				if len(nodes) > 0 {
+					return chromedp.Text(`div[class*="MQJ5W"]`, &Description, chromedp.NodeVisible).Do(ctx)
+				}
+				return nil
+			}),
+
+			// Check for Price existence and then retrieve it
+			chromedp.ActionFunc(func(ctx context.Context) error {
+				var nodes []*cdp.Node
+				if err := chromedp.Nodes(`span.l29r1 strong`, &nodes, chromedp.AtLeast(0)).Do(ctx); err != nil {
+					return err
+				}
 				if len(nodes) > 0 {
 					return chromedp.Text(`span.l29r1 strong`, &Price, chromedp.NodeVisible).Do(ctx)
 				}
-
 				return nil
 			}),
-			chromedp.Text(`div._3oBho`, &City, chromedp.NodeVisible),
-			chromedp.Text(`div.bWPjU`, &attributes, chromedp.NodeVisible),
+
+			// Check for City existence and then retrieve it
+			chromedp.ActionFunc(func(ctx context.Context) error {
+				var nodes []*cdp.Node
+				if err := chromedp.Nodes(`div._3oBho`, &nodes, chromedp.AtLeast(0)).Do(ctx); err != nil {
+					return err
+				}
+				if len(nodes) > 0 {
+					return chromedp.Text(`div._3oBho`, &City, chromedp.NodeVisible).Do(ctx)
+				}
+				return nil
+			}),
+
+			// Check for attributes existence and then retrieve them
+			chromedp.ActionFunc(func(ctx context.Context) error {
+				var nodes []*cdp.Node
+				if err := chromedp.Nodes(`div.bWPjU`, &nodes, chromedp.AtLeast(0)).Do(ctx); err != nil {
+					return err
+				}
+				if len(nodes) > 0 {
+					return chromedp.Text(`div.bWPjU`, &attributes, chromedp.NodeVisible).Do(ctx)
+				}
+				return nil
+			}),
 		)
 
 		if err != nil {
-			return nil, err
+			return &ad, err
 		}
 		CreationTime = strings.Split(City, "،")[0]
 		Neighborhood = strings.Split(City, "،")[2]
@@ -228,13 +283,12 @@ func (c *SheypoorCrawler) CrawlPageUrl(ctx context.Context, pageUrl string) (*Ad
 
 		}
 
-		id := strings.Trim(strings.Split(Link, "-")[len(strings.Split(Link, "-"))-1], ".html")
+		id := strings.Trim(strings.Split(ad.Link, "-")[len(strings.Split(ad.Link, "-"))-1], ".html")
 		SellerContact, err = c.getSellerPhone(id)
 		if err != nil {
 			fmt.Println("error in getSellerPhone", err)
 		}
 		ad.Title = Title
-		ad.Link = Link
 		ad.PhotoUrl = PhotoUrl
 		ad.Description = Description
 		ad.City = strings.Trim(City, " ")
@@ -342,7 +396,7 @@ func (c *SheypoorCrawler) getSellerPhone(id string) (string, error) {
 func (c *SheypoorCrawler) RunCrawler() {
 	go func() {
 		for _, v := range sheypoor_search_urls {
-			ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second*500)
 
 			wp := NewWorkerPool(v, numberOfCrawlerWorkers, c)
 

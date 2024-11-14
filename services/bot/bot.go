@@ -68,5 +68,4 @@ func (b *Bot) StartBot(db *gorm.DB) {
 	log.Print("Bot is running !")
 	b.RegisterHandlers(db)
 	b.Bot.Start()
-	b.Bot.Start()
 }

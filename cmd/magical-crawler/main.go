@@ -34,7 +34,6 @@ func main() {
 	repo := database.NewRepository(dbService)
 
 	err = setAdminUserIds(repo)
-	fmt.Println(config.AdminUserIds)
 	if err != nil {
 		fmt.Println("set admins had error:", err)
 		os.Exit(1)
