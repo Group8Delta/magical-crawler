@@ -44,6 +44,9 @@ const (
 	ApplyFiltersButton  = "اعمال فیلتر"
 	FromButton          = "از"
 	ToButton            = "تا"
+	AdType              = "نوع آگهی"
+	ForRent             = "برای اجاره"
+	ForBuy              = "برای خرید"
 	GoButton            = "بزن بریم"
 	RemoveButton        = "بیخیال"
 )
