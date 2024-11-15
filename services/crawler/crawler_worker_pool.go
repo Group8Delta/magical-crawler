@@ -49,7 +49,7 @@ func (wp *WorkerPoll) dispatcher(ctx context.Context) {
 	// Start worker goroutines.
 	for i := 1; i <= wp.numWorkers; i++ {
 		wg.Add(1)
-		go wp.worker(i,ctx, &wg)
+		go wp.worker(i, ctx, &wg)
 	}
 
 	// Enqueue tasks into the jobs queue.
@@ -61,20 +61,22 @@ func (wp *WorkerPoll) dispatcher(ctx context.Context) {
 	wg.Wait()              // Wait for all workers to complete
 	close(wp.resultsQueue) // Signal no more results will be sent.
 }
-func (wp *WorkerPoll) worker(id int,ctx context.Context, wg *sync.WaitGroup) {
+func (wp *WorkerPoll) worker(id int, ctx context.Context, wg *sync.WaitGroup) {
 	defer wg.Done()
 	for task := range wp.jobsQueue { // Process jobs from the queue
 		log.Printf("Worker %d started crawl page %s\n", id, task.Link)
 		start := time.Now()
 		var memStatsStart, memStatsEnd runtime.MemStats
 		runtime.ReadMemStats(&memStatsStart)
-		crawlData, err := wp.crawler.CrawlPageUrl(ctx,task.Link)
+		crawlData, err := wp.crawler.CrawlPageUrl(ctx, task.Link)
 		runtime.ReadMemStats(&memStatsEnd)
 
 		ramUsage := 0
 		if memStatsEnd.HeapAlloc > memStatsStart.HeapAlloc {
 			ramUsage = int((memStatsEnd.HeapAlloc - memStatsStart.HeapAlloc) / (1024)) // Convert to KB
 		}
+		fmt.Printf("crawled data :%v\n", crawlData)
+		fmt.Printf("error crawl :%v\n", err)
 
 		result := Result{
 			Ad:        crawlData,
@@ -103,7 +105,7 @@ func (wp *WorkerPoll) resultsCollector(done chan bool) {
 
 func (wp *WorkerPoll) Start(ctx context.Context) {
 	log.Printf("start worker-pool with %d worker", wp.numWorkers)
-	links, err := wp.crawler.CrawlAdsLinks(ctx,wp.mainLink)
+	links, err := wp.crawler.CrawlAdsLinks(ctx, wp.mainLink)
 	if err != nil {
 		log.Println("Error in crawl main page with crawler ", err)
 		return
