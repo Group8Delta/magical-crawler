@@ -18,7 +18,7 @@ const (
 	DivarCrawlerType    CrawlerType = "divar_crawler"
 	SheypoorCrawlerType CrawlerType = "sheypoor_crawler"
 )
-const numberOfCrawlerWorkers = 5
+const numberOfCrawlerWorkers = 10
 
 var CrawlerTypes []CrawlerType = []CrawlerType{
 	DivarCrawlerType,
@@ -31,7 +31,7 @@ type CrawlerInterface interface {
 	RunCrawler()
 }
 
-func New(crawlerType CrawlerType, config *config.Config, d *database.Repository, maxDeepth int, alerter *alerting.Alerter) (CrawlerInterface, error) {
+func New(crawlerType CrawlerType, config *config.Config, d database.IRepository, maxDeepth int, alerter *alerting.Alerter) (CrawlerInterface, error) {
 	switch crawlerType {
 	case DivarCrawlerType:
 		return &DivarCrawler{config: config, maxDeepth: maxDeepth, alerter: alerter, dbRepository: d}, nil
@@ -43,6 +43,7 @@ func New(crawlerType CrawlerType, config *config.Config, d *database.Repository,
 }
 func SaveAdData(repo database.IRepository, ad *Ad) error {
 	a, err := repo.GetAdByLink(ad.Link)
+
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return err
 	}
@@ -55,7 +56,7 @@ func SaveAdData(repo database.IRepository, ad *Ad) error {
 		buildYear := int(ad.BuiltYear)
 		floor := int(ad.Floor)
 		nad := repo.CreateAd(Dtos.AdDto{Link: ad.Link, PhotoUrl: &ad.PhotoUrl, SellerContact: ad.SellerContact, Description: &ad.Description, Price: &price, RentPrice: &rprice, City: &ad.City, Neighborhood: &ad.Neighborhood, Size: &size, Bedrooms: &betrooms, HasElevator: &ad.HasElevator, HasStorage: &ad.HasStorage, BuiltYear: &buildYear, ForRent: ad.ForRent, IsApartment: ad.IsApartment, Floor: &floor, CreationTime: &ad.CreationTime})
-		repo.CreatePriceHistory(Dtos.PriceHistoryDto{AdID: uint(*nad.Price), Price: *nad.Price, RentPrice: nad.RentPrice, SubmittedAt: time.Now()})
+		repo.CreatePriceHistory(Dtos.PriceHistoryDto{AdID: uint(nad.ID), Price: *nad.Price, RentPrice: nad.RentPrice, SubmittedAt: time.Now()})
 	} else {
 		price := int64(ad.Price)
 		rprice := int(ad.RentPrice)
@@ -67,8 +68,8 @@ func SaveAdData(repo database.IRepository, ad *Ad) error {
 		if err != nil {
 			return err
 		}
-		if nad.Price != a.Price || nad.RentPrice != a.RentPrice {
-			repo.CreatePriceHistory(Dtos.PriceHistoryDto{AdID: uint(*nad.Price), Price: *nad.Price, RentPrice: nad.RentPrice, SubmittedAt: time.Now()})
+		if ad.Price != uint(*a.Price) || ad.RentPrice != uint(*a.RentPrice) {
+			repo.CreatePriceHistory(Dtos.PriceHistoryDto{AdID: uint(nad.ID), Price: *nad.Price, RentPrice: nad.RentPrice, SubmittedAt: time.Now()})
 
 		}
 

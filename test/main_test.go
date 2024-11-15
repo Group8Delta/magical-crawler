@@ -10,7 +10,7 @@ import (
 )
 
 var testDbService database.DbService
-var testRepo *database.Repository
+var testRepo database.IRepository
 
 var testDivarCrawler crawler.CrawlerInterface
 var testSheypoorCrawler crawler.CrawlerInterface
@@ -18,11 +18,11 @@ var testSheypoorCrawler crawler.CrawlerInterface
 func TestMain(m *testing.M) {
 	testDbService = database.New()
 	config := config.GetConfig()
-	testRepo := database.NewRepository(testDbService)
 	err := testDbService.Init(config)
 	if err != nil {
 		panic("Failed to connect to database: " + err.Error())
 	}
+	testRepo = database.NewRepository(testDbService)
 
 	defer testDbService.Close()
 

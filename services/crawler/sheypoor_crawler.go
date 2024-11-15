@@ -123,25 +123,24 @@ func (c *SheypoorCrawler) CrawlAdsLinks(ctx context.Context, url string) ([]stri
 }
 
 func (c *SheypoorCrawler) CrawlPageUrl(ctx context.Context, pageUrl string) (*Ad, error) {
+	var ad Ad = Ad{}
+	ad.Link = pageUrl
+
+	var panicError error
+	defer func() {
+		if r := recover(); r != nil {
+			// Recover from panic and set err to indicate the panic message
+			panicError = fmt.Errorf("recovered from panic in CrawlPageUrl: %v", r)
+		}
+	}()
 	ctx, cancel := chromedp.NewContext(ctx)
 	defer cancel()
 	select {
 	case <-ctx.Done():
-		return nil, errors.New("time-out")
+		return &ad, errors.New("time-out")
 	default:
-
-		var ad Ad = Ad{}
-		var panicError error
-		defer func() {
-			if r := recover(); r != nil {
-				// Recover from panic and set err to indicate the panic message
-				panicError = fmt.Errorf("recovered from panic in CrawlPageUrl: %v", r)
-			}
-		}()
-
 		// Variables to store extracted data
 		var Title string
-		ad.Link = pageUrl
 		var PhotoUrl string
 		var SellerContact string
 
@@ -242,6 +241,11 @@ func (c *SheypoorCrawler) CrawlPageUrl(ctx context.Context, pageUrl string) (*Ad
 		if err != nil {
 			return &ad, err
 		}
+
+		if Title == "" {
+			return &ad, errors.New("error occurred in crawling this page.")
+		}
+
 		CreationTime = strings.Split(City, "،")[0]
 		Neighborhood = strings.Split(City, "،")[2]
 		City = strings.Split(City, "،")[1]
@@ -341,6 +345,7 @@ func (c *SheypoorCrawler) CrawlPageUrl(ctx context.Context, pageUrl string) (*Ad
 		ad.CreationTime = cr
 		return &ad, panicError
 	}
+
 }
 
 func (c *SheypoorCrawler) getSellerPhone(id string) (string, error) {
@@ -394,30 +399,31 @@ func (c *SheypoorCrawler) getSellerPhone(id string) (string, error) {
 
 // max deepth 0 means crawl infinity
 func (c *SheypoorCrawler) RunCrawler() {
-	go func() {
-		for _, v := range sheypoor_search_urls {
-			ctx, cancel := context.WithTimeout(context.Background(), time.Second*500)
+	for _, v := range sheypoor_search_urls {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second*2000)
 
-			wp := NewWorkerPool(v, numberOfCrawlerWorkers, c)
+		wp := NewWorkerPool(v, numberOfCrawlerWorkers, c)
 
-			wp.Start(ctx)
-			results := wp.GetResults()
-			errors := wp.GetErrors()
+		wp.Start(ctx)
+		results := wp.GetResults()
+		errors := wp.GetErrors()
 
-			for _, v := range errors {
-				c.alerter.SendAlert(&alerting.Alert{Title: "sheypoor crawler error", Content: v.String()})
+		fmt.Printf("sheypoor crawler errors:%v\n", errors)
 
-				fmt.Println(v.Err.Error())
-			}
+		for _, v := range errors {
+			c.alerter.SendAlert(&alerting.Alert{Title: "sheypoor crawler error", Content: v.String()})
 
-			for _, v := range results {
-				err := SaveAdData(c.dbRepository, v.Ad)
-				if err != nil {
-					log.Printf("error in save ad data: %s\n", err.Error())
-				}
-			}
-
-			cancel()
+			fmt.Println(v.Err.Error())
 		}
-	}()
+
+		for _, v := range results {
+			err := SaveAdData(c.dbRepository, v.Ad)
+			if err != nil {
+				log.Printf("error in save ad data: %s\n", err.Error())
+			}
+		}
+
+		cancel()
+	}
+
 }

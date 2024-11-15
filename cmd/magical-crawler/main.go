@@ -56,7 +56,7 @@ func main() {
 	// http.ListenAndServe(":"+config.Port, nil)
 }
 
-func initialCrawlers(config *config.Config, repo *database.Repository, alerter *alerting.Alerter) {
+func initialCrawlers(config *config.Config, repo database.IRepository, alerter *alerting.Alerter) {
 	runIncrementalCrawl(config, repo, alerter)
 	if config.EnableFullCrawl {
 		runCrawlers(config, repo, 0, alerter)
@@ -64,17 +64,17 @@ func initialCrawlers(config *config.Config, repo *database.Repository, alerter *
 	}
 }
 
-func runCrawlers(c *config.Config, repo *database.Repository, maxDeepth int, alerter *alerting.Alerter) {
+func runCrawlers(c *config.Config, repo database.IRepository, maxDeepth int, alerter *alerting.Alerter) {
 	for _, v := range crawler.CrawlerTypes {
 		crawler, err := crawler.New(v, c, repo, maxDeepth, alerter)
 		if err != nil {
 			panic("Failed to initial Crawler: " + err.Error())
 		}
-		crawler.RunCrawler()
+		go crawler.RunCrawler()
 
 	}
 }
-func runIncrementalCrawl(c *config.Config, repo *database.Repository, alerter *alerting.Alerter) {
+func runIncrementalCrawl(c *config.Config, repo database.IRepository, alerter *alerting.Alerter) {
 	go func() {
 		ticker := time.NewTicker(2 * time.Hour)
 		defer ticker.Stop()
@@ -93,7 +93,7 @@ func runIncrementalCrawl(c *config.Config, repo *database.Repository, alerter *a
 	}()
 }
 
-func setAdminUserIds(repo *database.Repository) error {
+func setAdminUserIds(repo database.IRepository) error {
 	users, err := repo.GetAdminUsers()
 	if err != nil {
 		return err

@@ -36,6 +36,7 @@ func (n *Alerter) RunAdminNotifier() {
 			}
 
 			m := n.AlertQueue.Pop().(*Alert)
+			fmt.Printf("alert found:%v\n", m)
 			if m != nil {
 				recipientIdentifier := strconv.Itoa(config.AdminUserIds[adminSelector])
 				err := n.notifier.Notify(recipientIdentifier, &notification.Message{Title: m.Title, Content: m.Content})

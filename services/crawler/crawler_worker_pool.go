@@ -75,6 +75,8 @@ func (wp *WorkerPoll) worker(id int, ctx context.Context, wg *sync.WaitGroup) {
 		if memStatsEnd.HeapAlloc > memStatsStart.HeapAlloc {
 			ramUsage = int((memStatsEnd.HeapAlloc - memStatsStart.HeapAlloc) / (1024)) // Convert to KB
 		}
+		fmt.Printf("crawled data :%v\n", crawlData)
+		fmt.Printf("error crawl :%v\n", err)
 
 		result := Result{
 			Ad:        crawlData,
