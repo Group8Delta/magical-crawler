@@ -17,6 +17,7 @@ type IRepository interface {
 	UpdateAd(ad Dtos.AdDto) (*models.Ad, error)
 	CreatePriceHistory(ph Dtos.PriceHistoryDto) *models.PriceHistory
 	GetAdminUsers() ([]*models.User, error)
+	GetAdsByFilterId(filterId int) ([]models.Ad, error)
 	// Log
 	AddLog(log models.Log)
 	//GetLogLevelByName(name string) (models.LogLevel, error)
@@ -169,6 +170,20 @@ func (r *Repository) GetAdminUsers() ([]*models.User, error) {
 func (r *Repository) AddLog(log models.Log) {
 	log.ID = 0
 	r.db.GetDb().Create(&log)
+}
+
+func (r *Repository) GetAdsByFilterId(filterId int) ([]models.Ad, error) {
+	filter, err := r.GetFilterById(filterId)
+	if err != nil {
+		return nil, err
+	}
+
+	ads := []models.Ad{}
+	err = r.db.GetDb().Where("city = ?", filter.City).Find(&ads).Error
+	if err != nil {
+		return nil, err
+	}
+	return ads, nil
 }
 
 //func (r *Repository) GetLogLevelByName(name string) (models.LogLevel, error) {

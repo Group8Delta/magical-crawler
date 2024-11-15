@@ -1,6 +1,8 @@
 package test
 
 import (
+	"encoding/json"
+	"fmt"
 	"testing"
 )
 
@@ -28,4 +30,19 @@ func TestSelectQuery(t *testing.T) {
 		t.Fatalf("Expected 1 but got %d", result)
 	}
 	t.Log("Select Query executed successfully")
+}
+
+func TestGetAdsByFilterId(t *testing.T) {
+	ads, err := testRepo.GetAdsByFilterId(1)
+	if err != nil {
+		t.Fatalf("GetAdsByFilterId failed: %v", err)
+	}
+
+	jads, err := json.Marshal(ads)
+
+	if err != nil {
+		t.Fatalf("Marshal ads failed: %v", err)
+	}
+	fmt.Print(string(jads))
+
 }
