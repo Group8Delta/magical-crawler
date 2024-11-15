@@ -24,6 +24,7 @@ type Filter struct {
 	IsApartment           *bool
 	CreationTimeRangeFrom time.Time
 	CreationTimeRangeTo   time.Time
+	SearchedCount         uint
 }
 
 type Range struct {

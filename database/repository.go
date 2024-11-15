@@ -17,6 +17,9 @@ type IRepository interface {
 	UpdateAd(ad Dtos.AdDto) (*models.Ad, error)
 	CreatePriceHistory(ph Dtos.PriceHistoryDto) *models.PriceHistory
 	GetAdminUsers() ([]*models.User, error)
+	// Log
+	AddLog(log models.Log)
+	//GetLogLevelByName(name string) (models.LogLevel, error)
 }
 
 type Repository struct {
@@ -58,6 +61,7 @@ func (r *Repository) UpdateFilter(filter Dtos.FilterDto) (models.Filter, error) 
 	if res.Error != nil {
 		return f, res.Error
 	}
+
 	f.City = filter.City
 	f.Neighborhood = filter.Neighborhood
 	f.SizeRange = filter.SizeRange
@@ -162,6 +166,15 @@ func (r *Repository) GetAdminUsers() ([]*models.User, error) {
 	}
 	return users, nil
 }
+func (r *Repository) AddLog(log models.Log) {
+	log.ID = 0
+	r.db.GetDb().Create(&log)
+}
+
+//func (r *Repository) GetLogLevelByName(name string) (models.LogLevel, error) {
+//
+//	r.db.GetDb().Where("name = ?", name).First(&models.LogLevel{})
+//}
 
 func NewRepository(db DbService) *Repository {
 	return &Repository{db: db}
