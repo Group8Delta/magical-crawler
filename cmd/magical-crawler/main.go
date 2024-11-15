@@ -5,6 +5,7 @@ import (
 	"log"
 	"magical-crwler/config"
 	"magical-crwler/database"
+	"magical-crwler/services/FilterServices"
 	"magical-crwler/services/bot"
 	"magical-crwler/services/crawler"
 	"time"
@@ -17,6 +18,9 @@ func init() {
 		runCrawlers(config, 0)
 		fmt.Println("full crawl started")
 	}
+	repository := database.NewRepository(database.New())
+	filterService := FilterServices.NewFilterServices(repository)
+	runFilterRunner(*filterService)
 }
 
 func runCrawlers(c *config.Config, maxDeepth int) {
@@ -43,6 +47,20 @@ func runIncrementalCrawl(c *config.Config) {
 		}
 	}()
 }
+
+func runFilterRunner(filterService FilterServices.FilterServices) {
+	go func(filterService FilterServices.FilterServices) {
+		ticker := time.NewTicker(2 * time.Hour)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ticker.C:
+				filterService.ApplyFilters()
+			}
+		}
+	}(filterService)
+}
+
 func main() {
 	config := config.GetConfig()
 

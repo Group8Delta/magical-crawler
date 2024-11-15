@@ -116,13 +116,12 @@ func (r *Repository) GetExistingFiltersAds(filter models.Filter) ([]int, error) 
 	return adIDs, err
 }
 
-func (r *Repository) GetAdsByIDs(filter models.Filter) ([]int, error) {
-	var adIDs []int
+func (r *Repository) GetAdsByIDs(ids []int) ([]models.Ad, error) {
+	var ads []models.Ad
 	err := r.db.GetDb().
 		Model(&models.FilteredAd{}).
-		Where("filter_id=?", filter.ID).
-		Select("ad_id").Find(&adIDs).Error
-	return adIDs, err
+		Where("filter_id in ?", ids).Find(&ads).Error
+	return ads, err
 }
 
 func (r *Repository) GetAFilterOwner(filter models.Filter) (models.User, error) {
