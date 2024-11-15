@@ -1,8 +1,11 @@
 package models
 
-import "time"
+import (
+	"gorm.io/gorm"
+)
 
 type Ad struct {
+	gorm.Model
 	ID            uint
 	Link          string
 	PhotoUrl      *string
@@ -21,6 +24,6 @@ type Ad struct {
 	ForRent       bool
 	IsApartment   bool
 	Floor         *int
-	CreationTime  *time.Time
-	VisitCount    int `gorm:"default:0"`
+	//CreationTime  *time.Time
+	VisitCount int `gorm:"default:0"`
 }

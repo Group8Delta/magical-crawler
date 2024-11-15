@@ -14,6 +14,11 @@ type IRepository interface {
 	// Log
 	AddLog(log models.Log)
 	//GetLogLevelByName(name string) (models.LogLevel, error)
+	// Ads repository methods
+	CreateAd(ad Dtos.AdDto) models.Ad
+	UpdateAd(ad Dtos.AdDto) (models.Ad, error)
+	BatchCreateAds(ads []Dtos.AdDto)
+	DeleteAd(id int)
 }
 
 type Repository struct {
@@ -87,6 +92,91 @@ func (r *Repository) AddLog(log models.Log) {
 //
 //	r.db.GetDb().Where("name = ?", name).First(&models.LogLevel{})
 //}
+
+func (r *Repository) CreateAd(adDto Dtos.AdDto) models.Ad {
+	ad := models.Ad{
+		ID:            0,
+		Link:          adDto.Link,
+		PhotoUrl:      adDto.PhotoUrl,
+		SellerName:    adDto.SellerName,
+		SellerContact: adDto.SellerContact,
+		Description:   adDto.Description,
+		Price:         adDto.Price,
+		RentPrice:     adDto.RentPrice,
+		City:          adDto.City,
+		Neighborhood:  adDto.Neighborhood,
+		Size:          adDto.Size,
+		Bedrooms:      adDto.Bedrooms,
+		HasElevator:   adDto.HasElevator,
+		HasStorage:    adDto.HasStorage,
+		BuiltYear:     adDto.BuiltYear,
+		ForRent:       adDto.ForRent,
+		IsApartment:   adDto.IsApartment,
+		Floor:         adDto.Floor,
+		VisitCount:    0,
+	}
+	r.db.GetDb().Create(&ad)
+	return ad
+}
+func (r *Repository) BatchCreateAds(adsReq []Dtos.AdDto) {
+	ads := make([]models.Ad, 0, len(adsReq))
+	for _, adDto := range adsReq {
+		ad := models.Ad{
+			ID:            0,
+			Link:          adDto.Link,
+			PhotoUrl:      adDto.PhotoUrl,
+			SellerName:    adDto.SellerName,
+			SellerContact: adDto.SellerContact,
+			Description:   adDto.Description,
+			Price:         adDto.Price,
+			RentPrice:     adDto.RentPrice,
+			City:          adDto.City,
+			Neighborhood:  adDto.Neighborhood,
+			Size:          adDto.Size,
+			Bedrooms:      adDto.Bedrooms,
+			HasElevator:   adDto.HasElevator,
+			HasStorage:    adDto.HasStorage,
+			BuiltYear:     adDto.BuiltYear,
+			ForRent:       adDto.ForRent,
+			IsApartment:   adDto.IsApartment,
+			Floor:         adDto.Floor,
+			VisitCount:    0,
+		}
+		ads = append(ads, ad)
+	}
+	r.db.GetDb().Create(&ads)
+	return
+}
+
+func (r *Repository) UpdateAd(adDto Dtos.AdDto) (models.Ad, error) {
+	ad := models.Ad{}
+	res := r.db.GetDb().Where("ID = ?", adDto.ID).First(&ad)
+	if res.Error != nil {
+		return ad, res.Error
+	}
+	ad.Link = adDto.Link
+	ad.City = adDto.City
+	ad.Description = adDto.Description
+	ad.PhotoUrl = adDto.PhotoUrl
+	ad.SellerName = adDto.SellerName
+	ad.SellerContact = adDto.SellerContact
+	ad.Description = adDto.Description
+	ad.Price = adDto.Price
+	ad.RentPrice = adDto.RentPrice
+	ad.IsApartment = adDto.IsApartment
+	ad.HasElevator = adDto.HasElevator
+	ad.HasStorage = adDto.HasStorage
+	ad.BuiltYear = adDto.BuiltYear
+	ad.ForRent = adDto.ForRent
+	ad.IsApartment = adDto.IsApartment
+	ad.Floor = adDto.Floor
+	r.db.GetDb().Save(&ad)
+	return ad, nil
+}
+
+func (r *Repository) DeleteAd(id int) {
+	r.db.GetDb().Where("ID = ?", id).Delete(&models.Ad{})
+}
 
 func NewRepository(db DbService) *Repository {
 	return &Repository{db: db}
