@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"log"
 	"magical-crwler/config"
+	"magical-crwler/database"
+	"magical-crwler/services/alerting"
 	"magical-crwler/utils"
 	"net/url"
 	"strconv"
@@ -19,23 +21,21 @@ import (
 )
 
 var divar_search_urls = []string{
-	"https://divar.ir/s/isfahan/buy-apartment",
-	"https://divar.ir/s/isfahan/buy-villa",
-	"https://divar.ir/s/isfahan/rent-apartment",
-	"https://divar.ir/s/isfahan/rent-villa",
+	"https://divar.ir/s/khorramdarreh/buy-residential",
+	"https://divar.ir/s/khorramdarreh/rent-residential",
 }
 
 type DivarCrawler struct {
-	config    *config.Config
-	maxDeepth int
+	config       *config.Config
+	dbRepository database.IRepository
+	maxDeepth    int
+	alerter      *alerting.Alerter
 }
 
 func (c *DivarCrawler) CrawlAdsLinks(ctx context.Context, url string) ([]string, error) {
 	ctx, cancel := chromedp.NewContext(ctx)
 	defer cancel()
 
-	ctx, cancel = context.WithTimeout(ctx, 100*time.Second)
-	defer cancel()
 	select {
 	case <-ctx.Done():
 		return make([]string, 0), errors.New("time-out")
@@ -131,34 +131,25 @@ func (c *DivarCrawler) CrawlAdsLinks(ctx context.Context, url string) ([]string,
 }
 
 func (c *DivarCrawler) CrawlPageUrl(ctx context.Context, pageUrl string) (*Ad, error) {
-	ctx, cancel := chromedp.NewContext(ctx)
-	defer cancel()
+	var ad Ad = Ad{}
+	ad.Link = pageUrl
 
-	ctx, cancel = context.WithTimeout(ctx, 100*time.Second)
+	var panicErr error
+	defer func() {
+		if r := recover(); r != nil {
+			// Recover from panic and set err to indicate the panic message
+			panicErr = fmt.Errorf("recovered from panic in CrawlPageUrl: %v", r)
+		}
+	}()
+
+	ctx, cancel := chromedp.NewContext(ctx)
 	defer cancel()
 	select {
 	case <-ctx.Done():
-		return nil, errors.New("time-out")
+		return &ad, errors.New("time-out")
 	default:
-		var ad Ad = Ad{}
-		var panicErr error
-		defer func() {
-			if r := recover(); r != nil {
-				// Recover from panic and set err to indicate the panic message
-				panicErr = fmt.Errorf("recovered from panic in CrawlPageUrl: %v", r)
-			}
-		}()
-		// Create a new context for Chrome
-		ctx, cancel := chromedp.NewContext(context.Background())
-		defer cancel()
-
-		// Set timeout for the context
-		ctx, cancel = context.WithTimeout(ctx, 100*time.Second)
-		defer cancel()
-
 		// Variables to store extracted data
 		var Title string
-		var Link string = pageUrl
 		var PhotoUrl string
 		var SellerContact string
 		var Description string
@@ -303,7 +294,11 @@ func (c *DivarCrawler) CrawlPageUrl(ctx context.Context, pageUrl string) (*Ad, e
 		)
 
 		if err != nil {
-			return nil, err
+			return &ad, err
+		}
+
+		if Title == "" {
+			return &ad, errors.New("error occurred in crawling this page.")
 		}
 
 		for _, v := range details {
@@ -355,6 +350,7 @@ func (c *DivarCrawler) CrawlPageUrl(ctx context.Context, pageUrl string) (*Ad, e
 			Neighborhood = strings.Split(City, "،")[1]
 			City = strings.Split(City, "،")[0]
 		}
+
 		CreationTime = strings.Split(CreationTime, "در")[0]
 		IsApartment = categories[2]
 
@@ -374,6 +370,7 @@ func (c *DivarCrawler) CrawlPageUrl(ctx context.Context, pageUrl string) (*Ad, e
 		ad.SellerContact = SellerContact
 
 		pr, err := utils.PersianToEnglishDigits((Price))
+
 		if err != nil {
 			fmt.Println("invalid price ")
 		}
@@ -410,7 +407,6 @@ func (c *DivarCrawler) CrawlPageUrl(ctx context.Context, pageUrl string) (*Ad, e
 		ad.City = City
 		ad.Neighborhood = Neighborhood
 
-		ad.Link = Link
 		ad.PhotoUrl = PhotoUrl
 
 		floor, err := utils.PersianToEnglishDigits((Floor))
@@ -447,23 +443,31 @@ func (c *DivarCrawler) CrawlPageUrl(ctx context.Context, pageUrl string) (*Ad, e
 
 // max deepth 0 means crawl infinity
 func (c *DivarCrawler) RunCrawler() {
-	go func() {
-		for _, v := range divar_search_urls {
+	for _, v := range divar_search_urls {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second*2000)
 
-			wp := NewWorkerPool(v, numberOfCrawlerWorkers, c)
+		wp := NewWorkerPool(v, numberOfCrawlerWorkers, c)
 
-			ctx,cancel:=context.WithTimeout(context.Background(),60*time.Second)
-			defer cancel()
-			wp.Start(ctx)
-			wp.GetResults()
-			errors := wp.GetErrors()
+		wp.Start(ctx)
+		results := wp.GetResults()
+		errors := wp.GetErrors()
 
-			for _, v := range errors {
-				fmt.Println(v.Err.Error())
-			}
-
-			fmt.Printf("errors count:%v\n", len(errors))
-
+		fmt.Printf("divar crawler errors:%v\n", errors)
+		for _, v := range errors {
+			c.alerter.SendAlert(&alerting.Alert{Title: "divar crawler error", Content: v.String()})
+			fmt.Println(v.Err.Error())
 		}
-	}()
+
+		for _, v := range results {
+			err := SaveAdData(c.dbRepository, v.Ad)
+			if err != nil {
+				log.Printf("error in save ad data: %s\n", err.Error())
+			}
+		}
+
+		fmt.Printf("errors count:%v\n", len(errors))
+		cancel()
+
+	}
+
 }
