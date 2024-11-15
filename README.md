@@ -10,6 +10,7 @@
 - **PostgreSQL** - primary data storage for crawled content
 - **Gorm** - ORM for database management
 - **Telegram Bot** - for real-time notifications
+- **Telebot** - a bot framework for Telegram Bot API
 - **Docker** - for containerized deployment
 - **Testify** - for testing and assertions
 
@@ -47,5 +48,5 @@ To get started with Magical Crawler:
 Run tests to verify functionality and stability:
 
 ```bash
-go test ../test
+go test ./test
 ```

@@ -7,10 +7,10 @@ type Role struct {
 	Name string
 }
 
-func GetRoleByName(db *gorm.DB, roleName string) (Role, error) {
+func GetRoleByName(db *gorm.DB, roleName string) (*Role, error) {
 	var role Role
 	if err := db.Where("name = ?", roleName).First(&role).Error; err != nil {
-		return Role{}, err
+		return nil, err
 	}
-	return role, nil
+	return &role, nil
 }

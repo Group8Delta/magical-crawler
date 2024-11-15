@@ -1,4 +1,4 @@
-package services
+package FilterServices
 
 import (
 	"errors"
@@ -17,7 +17,7 @@ func NewFilterServices(repository database.IRepository) *FilterServices {
 func (s FilterServices) CreateFilter(filter Dtos.FilterDto) (models.Filter, []error) {
 	f := models.Filter{}
 	Errors := make([]error, 0)
-	if filter.CreationTimeRange.From.Compare(filter.CreationTimeRange.To) > 0 {
+	if filter.CreationTimeRangeFrom.Compare(filter.CreationTimeRangeTo) > 0 {
 		Errors = append(Errors, errors.New("Invalid Creation Time Range"))
 	}
 	if filter.FloorRange.Min > filter.FloorRange.Max {
@@ -48,7 +48,7 @@ func (s FilterServices) CreateFilter(filter Dtos.FilterDto) (models.Filter, []er
 func (s FilterServices) UpdateFilter(filter Dtos.FilterDto) (models.Filter, []error) {
 	f := models.Filter{}
 	Errors := make([]error, 0)
-	if filter.CreationTimeRange.From.Compare(filter.CreationTimeRange.To) > 0 {
+	if filter.CreationTimeRangeFrom.Compare(filter.CreationTimeRangeTo) > 0 {
 		Errors = append(Errors, errors.New("Invalid Creation Time Range"))
 	}
 	if filter.FloorRange.Min > filter.FloorRange.Max {

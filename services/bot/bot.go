@@ -2,8 +2,8 @@ package bot
 
 import (
 	"log"
-	"magical-crwler/config"
 	"magical-crwler/constants"
+	"magical-crwler/models"
 	"time"
 
 	"gopkg.in/telebot.v4"
@@ -34,17 +34,25 @@ func NewBot(config BotConfig) (*Bot, error) {
 }
 
 func (b *Bot) RegisterHandlers(db *gorm.DB) {
-	b.Bot.Handle("/menu", MainMenuHandler)
-	b.Bot.Handle("/start", StartHandler(b))
+	b.Bot.Handle("/menu", func(ctx telebot.Context) error {
+
+		user, err := models.FindOrCreateUser(db, uint(ctx.Sender().ID), ctx.Sender().FirstName, ctx.Sender().LastName)
+		if err != nil {
+			return ctx.Reply("An error occurred while accessing the database.")
+		}
+		return MainMenuHandler(ctx, db, user)
+	})
+	b.Bot.Handle("/start", StartHandler(b, db))
 	b.Bot.Handle(&telebot.Btn{Unique: "export"}, ExportHandler(b))
-	b.Bot.Handle(constants.FiltersButton, FilterHandlers(b))
+	b.Bot.Handle(constants.SearchButton, SearchHandlers(b))
 	b.Bot.Handle("/exportFile", ExportHandler(b))
 	b.Bot.Handle(&telebot.Btn{Unique: "export"}, ExportHandler(b))
 	b.Bot.Handle(&telebot.Btn{Unique: "export_csv"}, export_csv_Handler(b))
 	b.Bot.Handle(&telebot.Btn{Unique: "export_xlsx"}, export_xlsx_Handler(b))
-	b.bot.Handle(config.AdminPanelButton, AdminHandler(b))
-	b.bot.Handle(config.AddAdminButton, AddAdminHandler(b, db))
-	b.bot.Handle(config.RemoveAdminButton, RemoveAdminHandler(b, db))
+	b.Bot.Handle(constants.AdminPanelButton, AdminHandler(b))
+	b.Bot.Handle(constants.AddAdminButton, AddAdminHandler(b, db))
+	b.Bot.Handle(constants.RemoveAdminButton, RemoveAdminHandler(b, db))
+	b.Bot.Handle(constants.ListAdminsButton, AdminListHandler(b, db))
 }
 
 func (b *Bot) StartBot(db *gorm.DB) {

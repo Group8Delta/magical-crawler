@@ -11,36 +11,15 @@ import (
 
 func StartHandler(b *Bot, db *gorm.DB) func(ctx telebot.Context) error {
 	return func(ctx telebot.Context) error {
-		user := ctx.Sender()
-		log.Printf("%s %s | %d started bot", user.FirstName, user.LastName, user.ID)
-		ctx.Send(constants.WelcomeMsg)
-		return MainMenuHandler(ctx)
+		telUser := ctx.Sender()
+		log.Printf("%s %s | %d started bot", telUser.FirstName, telUser.LastName, telUser.ID)
 
-		var (
-			menu = &telebot.ReplyMarkup{ResizeKeyboard: true}
-
-			searchBtn   = menu.Text(config.SearchButton)
-			filtersBtn  = menu.Text(config.FiltersButton)
-			accountBtn  = menu.Text(config.AccountManagementButton)
-			exportBtn   = menu.Text(config.ExportButton)
-			bookmarkBtn = menu.Text(config.FavoritesButton)
-			adminPnlBtn = menu.Text(config.AdminPanelButton)
-		)
-		//TODO: move to main
-		if models.IsSuperAdmin(db, user.ID) {
-			menu.Reply(
-				menu.Row(searchBtn, filtersBtn),
-				menu.Row(exportBtn, bookmarkBtn),
-				menu.Row(accountBtn, adminPnlBtn),
-			)
-		} else {
-			menu.Reply(
-				menu.Row(searchBtn, filtersBtn),
-				menu.Row(exportBtn, bookmarkBtn),
-				menu.Row(accountBtn),
-			)
+		user, err := models.FindOrCreateUser(db, uint(telUser.ID), telUser.FirstName, telUser.LastName)
+		if err != nil {
+			return ctx.Reply("An error occurred while accessing the database.")
 		}
 
-		return ctx.Send(config.WelcomeMsg, menu)
+		ctx.Send(constants.WelcomeMsg)
+		return MainMenuHandler(ctx, db, user)
 	}
 }

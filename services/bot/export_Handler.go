@@ -19,7 +19,7 @@ func ExportHandler(b *Bot) func(c telebot.Context) error {
 			exportMenu.Row(xlsxBtn, csvBtn),
 		)
 
-		return c.EditOrSend("یکی از گزینه های زیر را برای دریافت فایل انتخاب کنید", exportMenu)
+		return c.EditOrSend(constants.ExportBtnInfo, exportMenu)
 	}
 }
 
@@ -71,7 +71,6 @@ func export_csv_Handler(b *Bot) func(c telebot.Context) error {
 			return err
 		}
 
-		// Clean up
 		os.Remove(filename)
 		os.Remove(zipFilename)
 		return nil
