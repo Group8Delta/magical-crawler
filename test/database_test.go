@@ -75,7 +75,35 @@ func TestSearchAdIDs(t *testing.T) {
 	filter := models.Filter{
 		PriceRange: &models.Range{Min: 1000, Max: 5000},
 	}
-	adIDs, err := repository.SearchAdIDs(filter)
-	fmt.Printf("%+v\n", adIDs)
+	ads, err := repository.SearchAds(filter,"id")
+	fmt.Printf("%+v\n", ads)
 	assert.NoError(t, err)
+}
+
+func TestSaveFilterAds(t *testing.T) {
+	repository := database.NewRepository(testDbService)
+
+	// Mock data
+	adIDs := []int{101, 102, 103}
+	userID := uint(1)
+	filterID := uint(1)
+
+	// Act
+	err := repository.SaveFilterAds(adIDs, userID, filterID)
+
+	// Assert
+	assert.NoError(t, err, "expected no error when saving filter ads")
+
+	// Verify records were saved
+	var savedAds []models.FilteredAd
+	err = testDbService.GetDb().Where("filter_id = ? AND user_id = ?", filterID, userID).Find(&savedAds).Error
+	assert.NoError(t, err, "expected no error when querying saved ads")
+	assert.Equal(t, len(adIDs), len(savedAds), "expected the number of saved ads to match input ad IDs")
+
+	// Check each record
+	for i, savedAd := range savedAds {
+		assert.Equal(t, filterID, savedAd.FilterID, "expected filter ID to match")
+		assert.Equal(t, userID, savedAd.UserID, "expected user ID to match")
+		assert.Equal(t, uint(adIDs[i]), savedAd.AdID, "expected ad ID to match")
+	}
 }

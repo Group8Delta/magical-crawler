@@ -21,10 +21,11 @@ type IRepository interface {
 	AddLog(log models.Log)
 	//GetLogLevelByName(name string) (models.LogLevel, error)
 	GetAllFilters() ([]models.Filter, error)
-	SearchAdIDs(filter models.Filter) ([]int, error)
+	SearchAds(filter models.Filter, args ...string) ([]models.Ad, error)
 	GetExistingFiltersAds(filter models.Filter) ([]int, error)
 	GetAFilterOwner(filter models.Filter) (models.User, error)
 	GetAdsByIDs(ids []int) ([]models.Ad, error)
+	SaveFilterAds(adIDs []int, userID uint, filterID uint) error
 }
 
 type Repository struct {
@@ -228,10 +229,22 @@ func (r *Repository) GetAFilterOwner(filter models.Filter) (models.User, error) 
 
 	return user, err
 }
+func (r *Repository) SaveFilterAds(adIDs []int, userID uint, filterID uint) error {
+	filterAds := make([]models.FilteredAd, 0)
+	for i := 0; i < len(adIDs); i++ {
+		filterAds = append(filterAds, models.FilteredAd{UserID: userID, FilterID: filterID, AdID: uint(adIDs[i])})
+	}
+	result := r.db.GetDb().Create(&filterAds)
+	return result.Error
+}
 
-func (r *Repository) SearchAdIDs(filter models.Filter) ([]int, error) {
-	var adIDs []int
-	query := r.db.GetDb().Model(&models.Ad{}).Select("id")
+func (r *Repository) SearchAds(filter models.Filter, args ...string) ([]models.Ad, error) {
+	var ads []models.Ad
+	query := r.db.GetDb().Model(&models.Ad{})
+	if args != nil {
+		query = query.Select(args)
+	}
+
 	if filter.SearchQuery != nil && *filter.SearchQuery != "" {
 		query = query.Where("description ILIKE ? OR seller_name ILIKE ?", "%"+*filter.SearchQuery+"%", "%"+*filter.SearchQuery+"%")
 	}
@@ -320,6 +333,6 @@ func (r *Repository) SearchAdIDs(filter models.Filter) ([]int, error) {
 		query = query.Where("creation_time <= ?", filter.CreationTimeRangeTo)
 	}
 
-	err := query.Find(&adIDs).Error
-	return adIDs, err
+	err := query.Find(&ads).Error
+	return ads, err
 }

@@ -96,14 +96,18 @@ func (s FilterServices) ApplyFilters() error {
 
 	for index := range filters {
 		filter := filters[index]
-		ids, err := s.repository.SearchAdIDs(filter)
+		ads, err := s.repository.SearchAds(filter, "id") // just fetch ads id filed
 		if err != nil {
 			s.logger.Error(fmt.Sprintf("Error in search filters :%s", err.Error()))
 			continue
 		}
 
-		if len(ids) == 0 {
+		if len(ads) == 0 {
 			continue
+		}
+		ids := make([]int, 0)
+		for index := range ads {
+			ids = append(ids, int(ads[index].ID))
 		}
 		user, err := s.repository.GetAFilterOwner(filter)
 		if err != nil {
@@ -125,13 +129,15 @@ func (s FilterServices) ApplyFilters() error {
 		if len(diff) == 0 {
 			continue
 		}
-		ads, err := s.repository.GetAdsByIDs(diff)
+		newAds, err := s.repository.GetAdsByIDs(diff)
 		if err != nil {
 			s.logger.Error(fmt.Sprintf("Error in fetching ads :%s", err.Error()))
 			continue
 		}
-		messageContent := utils.GenerateFilterMessage(ads)
-		fmt.Printf("sending message to %s contetent %s\n", user.FirstName, messageContent)
+		messageContent := utils.GenerateFilterMessage(newAds)
+		s.repository.SaveFilterAds(diff, user.ID, filter.ID)
+		//TODO: send message with telegram bot
+		fmt.Printf("sending message to %s content %s\n", user.FirstName, messageContent)
 	}
 	return nil
 }
