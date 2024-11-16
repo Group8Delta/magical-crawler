@@ -44,6 +44,9 @@ const (
 	ApplyFiltersButton  = "اعمال فیلتر"
 	FromButton          = "از"
 	ToButton            = "تا"
+	AdType              = "نوع آگهی"
+	ForRent             = "برای اجاره"
+	ForBuy              = "برای خرید"
 	GoButton            = "بزن بریم"
 	RemoveButton        = "بیخیال"
 )
@@ -131,7 +134,7 @@ const (
 	Bedrooms8      = "۸ اتاق خواب"
 	Bedrooms9      = "۹ اتاق خواب"
 	Bedrooms10     = "۱۰ اتاق خواب"
-	BedroomsOver10 = "بیش از ۱۰ اتاق خواب"
+	BedroomsOver10 = "بیش از ۱۰"
 )
 
 // Property Type Buttons
@@ -184,10 +187,10 @@ const (
 
 // Cities
 const (
-	Tehran  = "تهران"
-	Esfahan = "اصفهان"
-	Mashhad = "مشهد"
-	Shiraz  = "شیراز"
+	Tehran     = "تهران"
+	Mazandaran = "مازندران"
+	Khoram     = "خرم"
+	Zanjan     = "زنجان"
 )
 
 // Account Management Menu
