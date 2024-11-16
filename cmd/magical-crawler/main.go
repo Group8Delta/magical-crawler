@@ -59,6 +59,10 @@ func main() {
 	// http.ListenAndServe(":"+config.Port, nil)
 }
 
+func runWatchListRunner(conf *config.Config, repo database.IRepository) {
+
+}
+
 func initialCrawlers(config *config.Config, repo database.IRepository, alerter *alerting.Alerter) {
 	runIncrementalCrawl(config, repo, alerter)
 	if config.EnableFullCrawl {

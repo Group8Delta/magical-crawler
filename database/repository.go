@@ -184,8 +184,7 @@ func (r *Repository) GetAdsByFilterId(filterId int) ([]models.Ad, error) {
 		return nil, err
 	}
 
-	ads := []models.Ad{}
-	err = r.db.GetDb().Where("city = ?", filter.City).Find(&ads).Error
+	ads, err := r.SearchAds(filter)
 	if err != nil {
 		return nil, err
 	}
