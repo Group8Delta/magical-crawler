@@ -26,6 +26,7 @@ type IRepository interface {
 	GetAFilterOwner(filter models.Filter) (models.User, error)
 	GetAdsByIDs(ids []int) ([]models.Ad, error)
 	SaveFilterAds(adIDs []int, userID uint, filterID uint) error
+	SaveCrawlerFunctionality(cf models.CrawlerFunctionality) error
 }
 
 type Repository struct {
@@ -335,4 +336,8 @@ func (r *Repository) SearchAds(filter models.Filter, args ...string) ([]models.A
 
 	err := query.Find(&ads).Error
 	return ads, err
+}
+
+func (r *Repository) SaveCrawlerFunctionality(cf models.CrawlerFunctionality) error {
+	return r.db.GetDb().Save(&cf).Error
 }

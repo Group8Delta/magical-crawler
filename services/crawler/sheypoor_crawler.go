@@ -43,12 +43,13 @@ type SheypoorCrawler struct {
 	alerter      *alerting.Alerter
 }
 
-func (c *SheypoorCrawler) CrawlAdsLinks(ctx context.Context, url string) ([]string, error) {
+func (c *SheypoorCrawler) CrawlAdsLinks(ctx context.Context, url string) ([]string, int, error) {
+	requestCount := 0
 	ctx, cancel := chromedp.NewContext(ctx)
 	defer cancel()
 	select {
 	case <-ctx.Done():
-		return make([]string, 0), errors.New("time-out")
+		return make([]string, 0), requestCount, errors.New("time-out")
 	default:
 		deepth := 0
 
@@ -58,8 +59,9 @@ func (c *SheypoorCrawler) CrawlAdsLinks(ctx context.Context, url string) ([]stri
 		err := chromedp.Run(ctx,
 			chromedp.Navigate(url),
 		)
+		requestCount++
 		if err != nil {
-			return nil, err
+			return nil, requestCount, err
 		}
 
 		for {
@@ -84,7 +86,7 @@ func (c *SheypoorCrawler) CrawlAdsLinks(ctx context.Context, url string) ([]stri
 				chromedp.Evaluate(`window.scrollTo(0, document.body.scrollHeight)`, nil),
 				chromedp.Sleep(500*time.Millisecond),
 			)
-
+			requestCount++
 			if err != nil {
 				log.Println(err)
 				continue
@@ -106,7 +108,7 @@ func (c *SheypoorCrawler) CrawlAdsLinks(ctx context.Context, url string) ([]stri
 
 		doc, err := goquery.NewDocumentFromReader(strings.NewReader(allHTMLContent.String()))
 		if err != nil {
-			return nil, err
+			return nil, requestCount, err
 		}
 
 		links := []string{}
@@ -118,13 +120,14 @@ func (c *SheypoorCrawler) CrawlAdsLinks(ctx context.Context, url string) ([]stri
 				fmt.Println("No href found")
 			}
 		})
-		return links, nil
+		return links, requestCount, nil
 	}
 }
 
-func (c *SheypoorCrawler) CrawlPageUrl(ctx context.Context, pageUrl string) (*Ad, error) {
+func (c *SheypoorCrawler) CrawlPageUrl(ctx context.Context, pageUrl string) (*Ad, int, error) {
 	var ad Ad = Ad{}
 	ad.Link = pageUrl
+	requestCount := 0
 
 	var panicError error
 	defer func() {
@@ -137,7 +140,7 @@ func (c *SheypoorCrawler) CrawlPageUrl(ctx context.Context, pageUrl string) (*Ad
 	defer cancel()
 	select {
 	case <-ctx.Done():
-		return &ad, errors.New("time-out")
+		return &ad, requestCount, errors.New("time-out")
 	default:
 		// Variables to store extracted data
 		var Title string
@@ -237,13 +240,13 @@ func (c *SheypoorCrawler) CrawlPageUrl(ctx context.Context, pageUrl string) (*Ad
 				return nil
 			}),
 		)
-
+		requestCount++
 		if err != nil {
-			return &ad, err
+			return &ad, requestCount, err
 		}
 
 		if Title == "" {
-			return &ad, errors.New("error occurred in crawling this page.")
+			return &ad, requestCount, errors.New("error occurred in crawling this page.")
 		}
 
 		CreationTime = strings.Split(City, "،")[0]
@@ -289,6 +292,7 @@ func (c *SheypoorCrawler) CrawlPageUrl(ctx context.Context, pageUrl string) (*Ad
 
 		id := strings.Trim(strings.Split(ad.Link, "-")[len(strings.Split(ad.Link, "-"))-1], ".html")
 		SellerContact, err = c.getSellerPhone(id)
+		requestCount++
 		if err != nil {
 			fmt.Println("error in getSellerPhone", err)
 		}
@@ -343,7 +347,7 @@ func (c *SheypoorCrawler) CrawlPageUrl(ctx context.Context, pageUrl string) (*Ad
 			fmt.Println("invalid CreationTime")
 		}
 		ad.CreationTime = cr
-		return &ad, panicError
+		return &ad, requestCount, panicError
 	}
 
 }
@@ -407,13 +411,12 @@ func (c *SheypoorCrawler) RunCrawler() {
 		wp.Start(ctx)
 		results := wp.GetResults()
 		errors := wp.GetErrors()
-
-		fmt.Printf("sheypoor crawler errors:%v\n", errors)
-
-		for _, v := range errors {
-			c.alerter.SendAlert(&alerting.Alert{Title: "sheypoor crawler error", Content: v.String()})
-
-			fmt.Println(v.Err.Error())
+		if len(errors) > 0 { // handle error in crawl
+			fmt.Printf("sheypoor crawler errors time (%s):%v\n", time.Now(), errors)
+			for _, v := range errors {
+				c.alerter.SendAlert(&alerting.Alert{Title: "sheypoor crawler error", Content: v.String()})
+				fmt.Println(v.Err.Error())
+			}
 		}
 
 		for _, v := range results {
@@ -421,8 +424,15 @@ func (c *SheypoorCrawler) RunCrawler() {
 			if err != nil {
 				log.Printf("error in save ad data: %s\n", err.Error())
 			}
+
 		}
 
+		cf, err := wp.GetCrawlerFunctionalityReport()
+		if err != nil {
+			fmt.Println("Error in saving shapoor functionality report ", err)
+		} else {
+			c.dbRepository.SaveCrawlerFunctionality(cf) // save monitoring data in database
+		}
 		cancel()
 	}
 

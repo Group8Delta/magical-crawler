@@ -138,8 +138,10 @@ func (s FilterServices) ApplyFilters() error {
 			continue
 		}
 		messageContent := utils.GenerateFilterMessage(newAds)
-		msg:=notification.Message{Content: messageContent,Title: ""}
-		s.notifier.Notify(fmt.Sprintf("%s",user.TelegramID),&msg)
+		msg := notification.Message{Content: messageContent, Title: ""}
+		if s.notifier != nil {
+			s.notifier.Notify(fmt.Sprintf("%s", user.TelegramID), &msg)
+		}
 		s.repository.SaveFilterAds(diff, user.ID, filter.ID)
 	}
 	return nil

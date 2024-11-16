@@ -8,6 +8,6 @@ import (
 
 func TestApplyFilterService(t *testing.T) {
 	repository := database.NewRepository(database.New())
-	filterService := FilterServices.NewFilterServices(repository)
+	filterService := FilterServices.NewFilterServices(repository, nil)
 	filterService.ApplyFilters()
 }
