@@ -5,6 +5,7 @@ import (
 	"log"
 	"magical-crwler/config"
 	"magical-crwler/database"
+	"magical-crwler/services/FilterServices"
 	"magical-crwler/services/alerting"
 	"magical-crwler/services/bot"
 	"magical-crwler/services/crawler"
@@ -51,6 +52,8 @@ func main() {
 	alerter.RunAdminNotifier()
 
 	initialCrawlers(conf, repo, alerter)
+	filterService := FilterServices.NewFilterServices(repo)
+	runFilterRunner(*filterService)
 
 	bot.StartBot(dbService.GetDb())
 	// http.ListenAndServe(":"+config.Port, nil)
@@ -91,6 +94,19 @@ func runIncrementalCrawl(c *config.Config, repo database.IRepository, alerter *a
 			}
 		}
 	}()
+}
+
+func runFilterRunner(filterService FilterServices.FilterServices) {
+	go func(filterService FilterServices.FilterServices) {
+		ticker := time.NewTicker(2 * time.Hour)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ticker.C:
+				filterService.ApplyFilters()
+			}
+		}
+	}(filterService)
 }
 
 func setAdminUserIds(repo database.IRepository) error {
