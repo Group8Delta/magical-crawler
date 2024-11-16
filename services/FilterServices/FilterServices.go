@@ -7,18 +7,21 @@ import (
 	"magical-crwler/models"
 	"magical-crwler/models/Dtos"
 	"magical-crwler/services/Logger"
+	"magical-crwler/services/notification"
 	"magical-crwler/utils"
 )
 
 type FilterServices struct {
 	repository database.IRepository
 	logger     *Logger.Logger
+	notifier   notification.Notifier
 }
 
-func NewFilterServices(repository database.IRepository) *FilterServices {
+func NewFilterServices(repository database.IRepository, notifier notification.Notifier) *FilterServices {
 	return &FilterServices{
 		repository: repository,
 		logger:     Logger.NewLogger(repository),
+		notifier:   notifier,
 	}
 }
 
@@ -135,9 +138,9 @@ func (s FilterServices) ApplyFilters() error {
 			continue
 		}
 		messageContent := utils.GenerateFilterMessage(newAds)
+		msg:=notification.Message{Content: messageContent,Title: ""}
+		s.notifier.Notify(fmt.Sprintf("%s",user.TelegramID),&msg)
 		s.repository.SaveFilterAds(diff, user.ID, filter.ID)
-		//TODO: send message with telegram bot
-		fmt.Printf("sending message to %s content %s\n", user.FirstName, messageContent)
 	}
 	return nil
 }
