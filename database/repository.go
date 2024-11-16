@@ -27,6 +27,9 @@ type IRepository interface {
 	GetAFilterOwner(filter models.Filter) (models.User, error)
 	GetAdsByIDs(ids []int) ([]models.Ad, error)
 	SaveFilterAds(adIDs []int, userID uint, filterID uint) error
+	GetCurrentMinuteWatchLists() ([]models.WatchList, error)
+	DeleteWatchList(id int) error
+	UpdateWatchList(id int, wl Dtos.WatchListDto) error
 }
 
 type Repository struct {
@@ -349,4 +352,39 @@ func (r *Repository) SearchAds(filter models.Filter, args ...string) ([]models.A
 
 	err := query.Find(&ads).Error
 	return ads, err
+}
+
+func (r *Repository) GetCurrentMinuteWatchLists() ([]models.WatchList, error) {
+	now := time.Now()
+	startOfMinute := now.Truncate(time.Minute)
+	endOfMinute := startOfMinute.Add(time.Minute)
+	var watchLists []models.WatchList
+	if err := r.db.GetDb().Where("next_run_time >= ? AND next_run_time < ? and deleted_at is null", startOfMinute, endOfMinute).Find(&watchLists).Error; err != nil {
+		return nil, err
+	}
+
+	return watchLists, nil
+}
+
+func (r *Repository) DeleteWatchList(id int) error {
+	w := models.WatchList{}
+	res := r.db.GetDb().Where("id = ?", id).First(&w)
+	if res.Error != nil {
+		return res.Error
+	}
+	w.DeletedAt = time.Now()
+
+	return r.db.GetDb().Save(&w).Error
+}
+
+func (r *Repository) UpdateWatchList(id int, wl Dtos.WatchListDto) error {
+	w := models.WatchList{}
+	res := r.db.GetDb().Where("id = ?", id).First(&w)
+	if res.Error != nil {
+		return res.Error
+	}
+	w.FilterID = uint(wl.FilterId)
+	w.UpdateCycle = wl.UpdateCycle
+
+	return r.db.GetDb().Save(&w).Error
 }

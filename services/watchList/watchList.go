@@ -17,43 +17,38 @@ type WatchList struct {
 	notifier notification.Notifier
 }
 
-func (w *WatchList) RunWatcher(userId int, filterId int, duration time.Duration, stopStatus chan bool) {
-	mu.Lock()
-	defer mu.Unlock()
-	watchLists[fmt.Sprintf("%d_%d_%d", userId, filterId, duration.Seconds())] = stopStatus
-	go w.runWatchListScheduler(userId, filterId, duration, stopStatus)
-}
-
-func (w *WatchList) StopWatcher(userId int, filterId int, duration time.Duration) {
-	mu.Lock()
-	defer mu.Unlock()
-	stopStatus := watchLists[fmt.Sprintf("%d_%d_%d", userId, filterId, duration.Seconds())]
-	stopStatus <- true
-}
-
-func (w *WatchList) runWatchListScheduler(userId int, filterId int, duration time.Duration, stopStatus chan bool) {
-	ticker := time.NewTicker(duration)
+func (w *WatchList) RunWatcher() {
+	ticker := time.NewTicker(1 * time.Minute)
 	defer ticker.Stop()
 
 	for {
 		select {
 		case <-ticker.C:
-			ads, err := w.repo.GetAdsByFilterId(filterId)
+			wls, err := w.repo.GetCurrentMinuteWatchLists()
 			if err != nil {
 				fmt.Println(err)
 				continue
 			}
-			c := ""
-
-			for _, v := range ads {
-				c += v.Link + "\n"
+			for _, v := range wls {
+				ads, err := w.repo.GetAdsByFilterId(int(v.FilterID))
+				if err != nil {
+					fmt.Println(err)
+					continue
+				}
+				c := ""
+				for _, v := range ads {
+					c += v.Link + "\n"
+				}
+				w.notifier.Notify(strconv.Itoa(int(v.UserID)), &notification.Message{Title: "your watch list ads:", Content: c})
 			}
-
-			w.notifier.Notify(strconv.Itoa(userId), &notification.Message{Title: "your watch list ads: ", Content: c})
-
-		case <-stopStatus:
-			close(stopStatus)
-			break
 		}
 	}
+}
+
+func (w *WatchList) StopWatcher(userId int, filterId int, duration time.Duration) {
+
+}
+
+func (w *WatchList) runWatchListScheduler(userId int, filterId int, duration time.Duration, stopStatus chan bool) {
+
 }

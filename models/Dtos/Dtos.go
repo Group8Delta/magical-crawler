@@ -53,3 +53,8 @@ type PriceHistoryDto struct {
 	RentPrice   *int
 	SubmittedAt time.Time
 }
+
+type WatchListDto struct {
+	FilterId    int
+	UpdateCycle int
+}

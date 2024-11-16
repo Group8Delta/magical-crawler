@@ -7,5 +7,6 @@ type WatchList struct {
 	UserID      uint
 	FilterID    uint
 	UpdateCycle int
-	LastUpdated time.Time
+	NextRunTime time.Time
+	DeletedAt   time.Time
 }
