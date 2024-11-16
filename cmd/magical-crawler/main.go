@@ -52,7 +52,7 @@ func main() {
 	alerter.RunAdminNotifier()
 
 	initialCrawlers(conf, repo, alerter)
-	filterService := FilterServices.NewFilterServices(repo)
+	filterService := FilterServices.NewFilterServices(repo,bot)
 	runFilterRunner(*filterService)
 
 	bot.StartBot(dbService.GetDb())
