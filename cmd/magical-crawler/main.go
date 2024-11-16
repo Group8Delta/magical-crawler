@@ -52,6 +52,8 @@ func main() {
 	alerter.RunAdminNotifier()
 
 	initialCrawlers(conf, repo, alerter)
+	filterService := FilterServices.NewFilterServices(repo)
+	runFilterRunner(*filterService)
 
 	bot.StartBot(dbService.GetDb())
 	// http.ListenAndServe(":"+config.Port, nil)
@@ -63,9 +65,6 @@ func initialCrawlers(config *config.Config, repo database.IRepository, alerter *
 		runCrawlers(config, repo, 0, alerter)
 		fmt.Println("full crawl started")
 	}
-	repository := database.NewRepository(database.New())
-	filterService := FilterServices.NewFilterServices(repository)
-	runFilterRunner(*filterService)
 }
 
 func runCrawlers(c *config.Config, repo database.IRepository, maxDeepth int, alerter *alerting.Alerter) {
