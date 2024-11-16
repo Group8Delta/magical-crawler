@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"magical-crwler/constants"
 	"magical-crwler/models"
-	"strings"
 	"time"
 
 	"gopkg.in/telebot.v4"
@@ -25,6 +24,7 @@ type Filters struct {
 }
 type FilterValue struct {
 	value     string
+	data      interface{}
 	button    telebot.Btn
 	subButton []telebot.Btn
 }
@@ -34,31 +34,43 @@ func (f *Filters) startSearch() []models.Ad {
 	return nil
 }
 func (f *Filters) removeAllValue() {
+	f.adType.value = ""
+	f.adType.data = nil
 	f.price.value = ""
+	f.price.data = nil
 	f.area.value = ""
+	f.area.data = nil
 	f.rooms.value = ""
+	f.rooms.data = nil
 	f.propertyType.value = ""
+	f.propertyType.data = nil
 	f.buildingAge.value = ""
+	f.buildingAge.data = nil
 	f.floor.value = ""
+	f.floor.data = nil
 	f.storage.value = ""
+	f.storage.data = nil
 	f.elevator.value = ""
+	f.elevator.data = nil
 	f.adDate.value = ""
+	f.adDate.data = nil
 	f.location.value = ""
+	f.location.data = nil
 }
 
 func (f *Filters) message() string {
 	var msg string
-	msg += fmt.Sprintf("🏘️                       %s\t:\n%s\n\n", f.adType.button.Text, f.adType.value)
-	msg += fmt.Sprintf("💰%s\t:\n%s\n\n", f.price.button.Text, f.price.value)
-	msg += fmt.Sprintf("📏%s\t:\n%s\n\n", f.area.button.Text, f.area.value)
-	msg += fmt.Sprintf("🛏️%s\t:\n%s\n\n", f.rooms.button.Text, f.rooms.value)
-	msg += fmt.Sprintf("🏘️%s\t:\n%s\n\n", f.propertyType.button.Text, f.propertyType.value)
-	msg += fmt.Sprintf("🏚️%s\t:\n%s\n\n", f.buildingAge.button.Text, f.buildingAge.value)
-	msg += fmt.Sprintf("🔃%s\t:\n%s\n\n", f.floor.button.Text, f.floor.value)
-	msg += fmt.Sprintf("🚪%s\t:\n%s\n\n", f.storage.button.Text, f.storage.value)
-	msg += fmt.Sprintf("🛗%s\t:\n%s\n\n", f.elevator.button.Text, f.elevator.value)
-	msg += fmt.Sprintf("🗓️%s\t:\n%s\n\n", f.adDate.button.Text, f.adDate.value)
-	msg += fmt.Sprintf("📍%s\t:\n%s\n\n", f.location.button.Text, f.location.value)
+	msg += fmt.Sprintf("🏘️%s\t:\n%s\n", f.adType.button.Text, f.adType.value)
+	msg += fmt.Sprintf("💰%s\t:\n%s\n", f.price.button.Text, f.price.value)
+	msg += fmt.Sprintf("📏%s\t:\n%s\n", f.area.button.Text, f.area.value)
+	msg += fmt.Sprintf("🛏️%s\t:\n%s\n", f.rooms.button.Text, f.rooms.value)
+	msg += fmt.Sprintf("🏘️%s\t:\n%s\n", f.propertyType.button.Text, f.propertyType.value)
+	msg += fmt.Sprintf("🏚️%s\t:\n%s\n", f.buildingAge.button.Text, f.buildingAge.value)
+	msg += fmt.Sprintf("🔃%s\t:\n%s\n", f.floor.button.Text, f.floor.value)
+	msg += fmt.Sprintf("🚪%s\t:\n%s\n", f.storage.button.Text, f.storage.value)
+	msg += fmt.Sprintf("🛗%s\t:\n%s\n", f.elevator.button.Text, f.elevator.value)
+	msg += fmt.Sprintf("🗓️%s\t:\n%s\n", f.adDate.button.Text, f.adDate.value)
+	msg += fmt.Sprintf("📍%s\t:\n%s\n", f.location.button.Text, f.location.value)
 
 	return msg
 }
@@ -85,9 +97,9 @@ func SearchHandlers(b *Bot) func(ctx telebot.Context) error {
 		}
 
 		YNButtons = []telebot.Btn{
-			selector["yes-no"].Data(constants.Yes, "YesNo", constants.Yes, "1"),
-			selector["yes-no"].Data(constants.No, "YesNo", constants.No, "0"),
-			selector["yes-no"].Data(constants.Unknown, "YesNo", constants.Unknown, "-1"),
+			selector["yes-no"].Data(constants.Yes, "YesNo", "1"),
+			selector["yes-no"].Data(constants.No, "YesNo", "0"),
+			selector["yes-no"].Data(constants.Unknown, "YesNo", "-1"),
 		}
 
 		goBtn     = selector["menu"].Data(constants.GoButton, "Filters", "Search")
@@ -176,11 +188,11 @@ func SearchHandlers(b *Bot) func(ctx telebot.Context) error {
 			propertyType: FilterValue{button: selector["menu"].Data(constants.PropertyTypeFilter, "Filters", "PropertyType"),
 				value: "",
 				subButton: []telebot.Btn{
-					selector["property"].Data(constants.PropertyApartment, "Property", "PA-apartment"),
-					selector["property"].Data(constants.PropertyVilla, "Property", "PA-villa"),
-					selector["property"].Data(constants.PropertyCommercial, "Property", "PA-commercial"),
-					selector["property"].Data(constants.PropertyOffice, "Property", "PA-office"),
-					selector["property"].Data(constants.PropertyLand, "Property", "PA-land"),
+					selector["property"].Data(constants.PropertyApartment, "Property", "PA-Apartment"),
+					selector["property"].Data(constants.PropertyVilla, "Property", "PA-Villa"),
+					selector["property"].Data(constants.PropertyCommercial, "Property", "PA-Commercial"),
+					selector["property"].Data(constants.PropertyOffice, "Property", "PA-Office"),
+					selector["property"].Data(constants.PropertyLand, "Property", "PA-Land"),
 				},
 			},
 			buildingAge: FilterValue{button: selector["menu"].Data(constants.BuildingAgeFilter, "Filters", "BuildingAge"),
@@ -241,16 +253,16 @@ func SearchHandlers(b *Bot) func(ctx telebot.Context) error {
 				value: "",
 				subButton: []telebot.Btn{
 					selector["location"].Data(constants.Tehran, "City", "Tehran"),
-					selector["location"].Data(constants.Esfahan, "City", "Esfahan"),
-					selector["location"].Data(constants.Mashhad, "City", "Mashhad"),
-					selector["location"].Data(constants.Shiraz, "City", "Shiraz"),
+					selector["location"].Data(constants.Zanjan, "City", "Zanjan"),
+					selector["location"].Data(constants.Khoram, "City", "Khoram"),
+					selector["location"].Data(constants.Mazandaran, "City", "Mazandaran"),
 				},
 			},
 		}
 	)
 
 	selector["menu"].Inline(
-		selector["menu"].Row(filters.price.button),
+		selector["menu"].Row(filters.adType.button, filters.price.button),
 		selector["menu"].Row(filters.area.button, filters.rooms.button, filters.propertyType.button),
 		selector["menu"].Row(filters.buildingAge.button, filters.floor.button, filters.storage.button),
 		selector["menu"].Row(filters.elevator.button, filters.adDate.button, filters.location.button),
@@ -277,6 +289,7 @@ func SearchHandlers(b *Bot) func(ctx telebot.Context) error {
 			b.Bot.Handle(&telebot.InlineButton{Unique: "AdType"}, func(c telebot.Context) error {
 				data := getValue(c.Data())
 				filters.adType.value = fmt.Sprintf("%v", data[0])
+				filters.location.data = data[1]
 				return c.EditOrSend(filters.message(), selector["menu"])
 			})
 			return ctx.EditOrSend(filters.message(), selector["ad-type"])
@@ -284,6 +297,7 @@ func SearchHandlers(b *Bot) func(ctx telebot.Context) error {
 			b.Bot.Handle(&telebot.InlineButton{Unique: "PriceRange"}, func(c telebot.Context) error {
 				data := getValue(c.Data())
 				filters.price.value = fmt.Sprintf("%v", data[0])
+				filters.location.data = data[1]
 				return c.EditOrSend(filters.message(), selector["menu"])
 			})
 			return ctx.EditOrSend(filters.message(), selector["price"])
@@ -291,12 +305,15 @@ func SearchHandlers(b *Bot) func(ctx telebot.Context) error {
 			b.Bot.Handle(&telebot.InlineButton{Unique: "AreaRange"}, func(c telebot.Context) error {
 				data := getValue(c.Data())
 				filters.area.value = fmt.Sprintf("%v", data[0])
+				filters.location.data = data[1]
 				return c.EditOrSend(filters.message(), selector["menu"])
 			})
 			return ctx.EditOrSend(filters.message(), selector["area"])
 		case "Rooms":
 			b.Bot.Handle(&telebot.InlineButton{Unique: "NumberOfRooms"}, func(c telebot.Context) error {
-				filters.rooms.value = strings.Split(c.Data(), "|")[0]
+				data := getValue(c.Data())
+				filters.rooms.value = fmt.Sprintf("%v", data[0])
+				filters.location.data = data[1]
 				return c.EditOrSend(filters.message(), selector["menu"])
 			})
 			return ctx.EditOrSend(filters.message(), selector["room"])
@@ -304,6 +321,7 @@ func SearchHandlers(b *Bot) func(ctx telebot.Context) error {
 			b.Bot.Handle(&telebot.InlineButton{Unique: "Property"}, func(c telebot.Context) error {
 				data := getValue(c.Data())
 				filters.propertyType.value = fmt.Sprintf("%v", data[0])
+				filters.location.data = data[1]
 				return c.EditOrSend(filters.message(), selector["menu"])
 			})
 			return ctx.EditOrSend(filters.message(), selector["property"])
@@ -311,36 +329,47 @@ func SearchHandlers(b *Bot) func(ctx telebot.Context) error {
 			b.Bot.Handle(&telebot.InlineButton{Unique: "Age"}, func(c telebot.Context) error {
 				data := getValue(c.Data())
 				filters.buildingAge.value = fmt.Sprintf("%v", data[0])
+				filters.location.data = data[1]
 				return c.EditOrSend(filters.message(), selector["menu"])
 			})
 			return ctx.EditOrSend(filters.message(), selector["age"])
 		case "Floor":
 			b.Bot.Handle(&telebot.InlineButton{Unique: "Floor"}, func(c telebot.Context) error {
-				filters.floor.value = c.Data()
+				data := getValue(c.Data())
+				filters.floor.value = fmt.Sprintf("%v", data[0])
+				filters.location.data = data[1]
 				return c.EditOrSend(filters.message(), selector["menu"])
 			})
 			return ctx.EditOrSend(filters.message(), selector["floor"])
 		case "Storage":
 			b.Bot.Handle(&telebot.InlineButton{Unique: "YesNo"}, func(c telebot.Context) error {
-				filters.storage.value = strings.Split(c.Data(), "|")[0]
+				data := getValue(c.Data())
+				filters.storage.value = fmt.Sprintf("%v", data[0])
+				filters.location.data = data[1]
 				return c.EditOrSend(filters.message(), selector["menu"])
 			})
 			return ctx.EditOrSend(filters.message(), selector["yes-no"])
 		case "Elevator":
 			b.Bot.Handle(&telebot.InlineButton{Unique: "YesNo"}, func(c telebot.Context) error {
-				filters.elevator.value = strings.Split(c.Data(), "|")[0]
+				data := getValue(c.Data())
+				filters.elevator.value = fmt.Sprintf("%v", data[0])
+				filters.location.data = data[1]
 				return c.EditOrSend(filters.message(), selector["menu"])
 			})
 			return ctx.EditOrSend(filters.message(), selector["yes-no"])
 		case "AdDate":
 			b.Bot.Handle(&telebot.InlineButton{Unique: "Time"}, func(c telebot.Context) error {
-				filters.adDate.value = c.Data()
+				data := getValue(c.Data())
+				filters.adDate.value = fmt.Sprintf("%v", data[0])
+				filters.location.data = data[1]
 				return c.EditOrSend(filters.message(), selector["menu"])
 			})
 			return ctx.EditOrSend(filters.message(), selector["ad-date"])
 		case "Location":
 			b.Bot.Handle(&telebot.InlineButton{Unique: "City"}, func(c telebot.Context) error {
-				filters.location.value = c.Data()
+				data := getValue(c.Data())
+				filters.location.value = fmt.Sprintf("%v", data[0])
+				filters.location.data = data[1]
 				return c.EditOrSend(filters.message(), selector["menu"])
 			})
 			return ctx.EditOrSend(filters.message(), selector["location"])
@@ -396,7 +425,7 @@ func getValue(value string) []interface{} {
 		"PR-900000+":    {constants.PriceOver900B, models.Range{Min: 900_000, Max: 0}},
 		"at-buy":        {constants.ForBuy, false},
 		"at-rent":       {constants.ForRent, true},
-		"-1":            {constants.Unknown},
+		"-1":            {constants.Unknown, nil},
 		"0":             {constants.No, false},
 		"1":             {constants.Yes, true},
 		"AR-0":          {constants.AreaUnder50, models.Range{Min: 0, Max: 50}},
@@ -418,18 +447,18 @@ func getValue(value string) []interface{} {
 		"AR-5000":       {constants.Area5000To7500, models.Range{Min: 5_000, Max: 7_500}},
 		"AR-7500":       {constants.Area7500To10000, models.Range{Min: 7_5000, Max: 9_000}},
 		"AR-1000+":      {constants.AreaOver10000, models.Range{Min: 9_000, Max: 0}},
-		"NR-0":          {constants.Bedrooms0, 0},
-		"NR-1":          {constants.Bedrooms1, 1},
-		"NR-2":          {constants.Bedrooms2, 2},
-		"NR-3":          {constants.Bedrooms3, 3},
-		"NR-4":          {constants.Bedrooms4, 4},
-		"NR-5":          {constants.Bedrooms5, 5},
-		"NR-6":          {constants.Bedrooms6, 6},
-		"NR-7":          {constants.Bedrooms7, 7},
-		"NR-8":          {constants.Bedrooms8, 8},
-		"NR-9":          {constants.Bedrooms9, 9},
-		"NR-10":         {constants.Bedrooms10, 10},
-		"NR-10+":        {constants.BedroomsOver10, 11},
+		"NR-0":          {constants.Bedrooms0, models.Range{Min: 0, Max: 0}},
+		"NR-1":          {constants.Bedrooms1, models.Range{Min: 0, Max: 1}},
+		"NR-2":          {constants.Bedrooms2, models.Range{Min: 0, Max: 2}},
+		"NR-3":          {constants.Bedrooms3, models.Range{Min: 0, Max: 3}},
+		"NR-4":          {constants.Bedrooms4, models.Range{Min: 0, Max: 4}},
+		"NR-5":          {constants.Bedrooms5, models.Range{Min: 0, Max: 5}},
+		"NR-6":          {constants.Bedrooms6, models.Range{Min: 0, Max: 6}},
+		"NR-7":          {constants.Bedrooms7, models.Range{Min: 0, Max: 7}},
+		"NR-8":          {constants.Bedrooms8, models.Range{Min: 0, Max: 8}},
+		"NR-9":          {constants.Bedrooms9, models.Range{Min: 0, Max: 9}},
+		"NR-10":         {constants.Bedrooms10, models.Range{Min: 0, Max: 10}},
+		"NR-10+":        {constants.BedroomsOver10, models.Range{Min: 0, Max: 11}},
 		"PA-Apartment":  {constants.PropertyApartment, "Apartment"},
 		"PA-Villa":      {constants.PropertyVilla, "Villa"},
 		"PA-Commercial": {constants.PropertyCommercial, "Commercial"},
@@ -447,18 +476,18 @@ func getValue(value string) []interface{} {
 		"BA-9Years":     {constants.BuildingAge9Years, 9},
 		"BA-10Years":    {constants.BuildingAge10Years, 10},
 		"BA-Over10":     {constants.BuildingAgeOver10, 11},
-		"FLR-0":         {constants.Floor0, 0},
-		"FLR-1":         {constants.Floor1, 1},
-		"FLR-2":         {constants.Floor2, 2},
-		"FLR-3":         {constants.Floor3, 3},
-		"FLR-4":         {constants.Floor4, 4},
-		"FLR-5":         {constants.Floor5, 5},
-		"FLR-6":         {constants.Floor6, 6},
-		"FLR-7":         {constants.Floor7, 7},
-		"FLR-8":         {constants.Floor8, 8},
-		"FLR-9":         {constants.Floor9, 9},
-		"FLR-10":        {constants.Floor10, 10},
-		"FLR-10+":       {constants.FloorOver10, 11},
+		"FLR-0":         {constants.Floor0, models.Range{Min: 0, Max: 0}},
+		"FLR-1":         {constants.Floor1, models.Range{Min: 0, Max: 1}},
+		"FLR-2":         {constants.Floor2, models.Range{Min: 0, Max: 2}},
+		"FLR-3":         {constants.Floor3, models.Range{Min: 0, Max: 3}},
+		"FLR-4":         {constants.Floor4, models.Range{Min: 0, Max: 4}},
+		"FLR-5":         {constants.Floor5, models.Range{Min: 0, Max: 5}},
+		"FLR-6":         {constants.Floor6, models.Range{Min: 0, Max: 6}},
+		"FLR-7":         {constants.Floor7, models.Range{Min: 0, Max: 7}},
+		"FLR-8":         {constants.Floor8, models.Range{Min: 0, Max: 8}},
+		"FLR-9":         {constants.Floor9, models.Range{Min: 0, Max: 9}},
+		"FLR-10":        {constants.Floor10, models.Range{Min: 0, Max: 10}},
+		"FLR-10+":       {constants.FloorOver10, models.Range{Min: 0, Max: 11}},
 		"TM-Today":      {constants.TimeToday, time.Now()},
 		"TM-1DayAgo":    {constants.Time1DayAgo, time.Now()},
 		"TM-2DaysAgo":   {constants.Time2DaysAgo, time.Now()},
@@ -467,9 +496,9 @@ func getValue(value string) []interface{} {
 		"TM-1MonthAgo":  {constants.Time1MonthAgo, time.Now()},
 		"TM-1YearAgo":   {constants.Time1YearAgo, time.Now()},
 		"Tehran":        {constants.Tehran, "Tehran"},
-		"Esfahan":       {constants.Esfahan, "Esfahan"},
-		"Mashhad":       {constants.Mashhad, "Mashhad"},
-		"Shiraz":        {constants.Shiraz, "Shiraz"},
+		"Zanjan":        {constants.Zanjan, "Zanjan"},
+		"Khoram":        {constants.Khoram, "Khoram"},
+		"Mazandaran":    {constants.Mazandaran, "Mazandaran"},
 	}
 	return btnMap[value]
 }
