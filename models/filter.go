@@ -1,6 +1,7 @@
 package models
 
 import (
+	"log"
 	"time"
 
 	"gorm.io/gorm"
@@ -31,7 +32,11 @@ type Range struct {
 	Max int `json:"max,omitempty"`
 }
 
-// type TimeRange struct {
-// 	From time.Time `json:"from,omitempty"`
-// 	To   time.Time `json:"to,omitempty"`
-// }
+func CreateNewFilter(db *gorm.DB, filters *Filter) error {
+	result := db.Create(filters)
+	if result.Error != nil {
+		return result.Error
+	}
+	log.Println(filters)
+	return nil
+}

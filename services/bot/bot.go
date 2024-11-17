@@ -62,7 +62,7 @@ func (b *Bot) RegisterHandlers(db *gorm.DB) {
 	})
 	b.Bot.Handle("/start", StartHandler(b, db))
 	b.Bot.Handle(&telebot.Btn{Unique: "export"}, ExportHandler(b))
-	b.Bot.Handle(constants.SearchButton, SearchHandlers(b))
+	b.Bot.Handle(constants.SearchButton, SearchHandlers(b, db))
 	b.Bot.Handle("/exportFile", ExportHandler(b))
 	b.Bot.Handle(&telebot.Btn{Unique: "export"}, ExportHandler(b))
 	b.Bot.Handle(&telebot.Btn{Unique: "export_csv"}, export_csv_Handler(b))
