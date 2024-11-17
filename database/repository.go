@@ -32,6 +32,7 @@ type IRepository interface {
 	UpdateWatchList(id int, wl Dtos.WatchListDto) error
 	CreateWatchList(wl Dtos.WatchListDto) (*models.WatchList, error)
 	GetUserById(id int) (*models.User, error)
+	SaveCrawlerFunctionality(cf models.CrawlerFunctionality) error
 }
 
 type Repository struct {
@@ -413,4 +414,7 @@ func (r *Repository) CreateWatchList(wl Dtos.WatchListDto) (*models.WatchList, e
 
 	err := r.db.GetDb().Create(&w).Error
 	return &w, err
+}
+func (r *Repository) SaveCrawlerFunctionality(cf models.CrawlerFunctionality) error {
+	return r.db.GetDb().Save(&cf).Error
 }

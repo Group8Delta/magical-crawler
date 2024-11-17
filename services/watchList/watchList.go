@@ -16,6 +16,8 @@ type WatchList struct {
 	notifier notification.Notifier
 }
 
+const workersCount = 10
+
 func New(repo database.IRepository, notifier notification.Notifier) *WatchList {
 	return &WatchList{repo: repo, notifier: notifier}
 }
@@ -38,7 +40,7 @@ func (w *WatchList) RunWatcher() {
 					break
 				}
 
-				nextStep := step + 10
+				nextStep := step + workersCount
 				if nextStep > len(wls) {
 					nextStep = len(wls)
 				}
