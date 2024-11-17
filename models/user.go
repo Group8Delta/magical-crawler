@@ -8,7 +8,7 @@ import (
 
 type User struct {
 	ID           uint
-	TelegramID   uint `gorm:"uniqueIndex;not null"`
+	TelegramID   uint `gorm:"uniqueIndex;default 0"`
 	FirstName    string
 	LastName     string
 	Email        *string

@@ -17,6 +17,7 @@ type IRepository interface {
 	UpdateAd(ad Dtos.AdDto) (*models.Ad, error)
 	CreatePriceHistory(ph Dtos.PriceHistoryDto) *models.PriceHistory
 	GetAdminUsers() ([]*models.User, error)
+	GetAdsByFilterId(filterId int) ([]models.Ad, error)
 	// Log
 	AddLog(log models.Log)
 	//GetLogLevelByName(name string) (models.LogLevel, error)
@@ -26,6 +27,11 @@ type IRepository interface {
 	GetAFilterOwner(filter models.Filter) (models.User, error)
 	GetAdsByIDs(ids []int) ([]models.Ad, error)
 	SaveFilterAds(adIDs []int, userID uint, filterID uint) error
+	GetCurrentMinuteWatchLists() ([]models.WatchList, error)
+	DeleteWatchList(id int) error
+	UpdateWatchList(id int, wl Dtos.WatchListDto) error
+	CreateWatchList(wl Dtos.WatchListDto) (*models.WatchList, error)
+	GetUserById(id int) (*models.User, error)
 	SaveCrawlerFunctionality(cf models.CrawlerFunctionality) error
 }
 
@@ -96,6 +102,12 @@ func (r *Repository) GetAdByLink(link string) (*models.Ad, error) {
 	ad := models.Ad{}
 	res := r.db.GetDb().Where("link = ?", link).First(&ad)
 	return &ad, res.Error
+}
+
+func (r *Repository) GetUserById(id int) (*models.User, error) {
+	user := models.User{}
+	res := r.db.GetDb().Where("id = ?", id).First(&user)
+	return &user, res.Error
 }
 
 func (r *Repository) CreateAd(ad Dtos.AdDto) *models.Ad {
@@ -176,6 +188,19 @@ func (r *Repository) GetAdminUsers() ([]*models.User, error) {
 func (r *Repository) AddLog(log models.Log) {
 	log.ID = 0
 	r.db.GetDb().Create(&log)
+}
+
+func (r *Repository) GetAdsByFilterId(filterId int) ([]models.Ad, error) {
+	filter, err := r.GetFilterById(filterId)
+	if err != nil {
+		return nil, err
+	}
+
+	ads, err := r.SearchAds(filter)
+	if err != nil {
+		return nil, err
+	}
+	return ads, nil
 }
 
 //func (r *Repository) GetLogLevelByName(name string) (models.LogLevel, error) {
@@ -338,6 +363,60 @@ func (r *Repository) SearchAds(filter models.Filter, args ...string) ([]models.A
 	return ads, err
 }
 
+func (r *Repository) GetCurrentMinuteWatchLists() ([]models.WatchList, error) {
+	now := time.Now()
+	startOfMinute := now.Truncate(time.Minute)
+	endOfMinute := startOfMinute.Add(time.Minute)
+	var watchLists []models.WatchList
+	if err := r.db.GetDb().Where("next_run_time >= ? AND next_run_time < ? and deleted_at is null", startOfMinute, endOfMinute).Find(&watchLists).Error; err != nil {
+		return nil, err
+	}
+
+	return watchLists, nil
+}
+
+func (r *Repository) DeleteWatchList(id int) error {
+	w := models.WatchList{}
+	res := r.db.GetDb().Where("id = ?", id).First(&w)
+	if res.Error != nil {
+		return res.Error
+	}
+	now := time.Now()
+	w.DeletedAt = &now
+
+	return r.db.GetDb().Save(&w).Error
+}
+
+func (r *Repository) UpdateWatchList(id int, wl Dtos.WatchListDto) error {
+	w := models.WatchList{}
+	res := r.db.GetDb().Where("id = ?", id).First(&w)
+	if res.Error != nil {
+		return res.Error
+	}
+
+	if wl.FilterId > 0 {
+		w.FilterID = uint(wl.FilterId)
+	}
+	if wl.UpdateCycle > 0 {
+		w.UpdateCycle = wl.UpdateCycle
+	}
+	w.NextRunTime = time.Now().Add(time.Duration(w.UpdateCycle) * time.Minute)
+	return r.db.GetDb().Save(&w).Error
+}
+
+func (r *Repository) CreateWatchList(wl Dtos.WatchListDto) (*models.WatchList, error) {
+
+	w := models.WatchList{
+		UserID:      uint(wl.UserId),
+		FilterID:    uint(wl.FilterId),
+		UpdateCycle: wl.UpdateCycle,
+		NextRunTime: time.Now().Add(time.Duration(wl.UpdateCycle) * time.Minute),
+		DeletedAt:   nil,
+	}
+
+	err := r.db.GetDb().Create(&w).Error
+	return &w, err
+}
 func (r *Repository) SaveCrawlerFunctionality(cf models.CrawlerFunctionality) error {
 	return r.db.GetDb().Save(&cf).Error
 }

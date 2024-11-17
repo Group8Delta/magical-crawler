@@ -1,12 +1,14 @@
 package test
 
 import (
+	"encoding/json"
 	"fmt"
-	"github.com/stretchr/testify/assert"
-	"gorm.io/gorm"
 	"magical-crwler/database"
 	"magical-crwler/models"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"gorm.io/gorm"
 )
 
 func TestDatabaseConnection(t *testing.T) {
@@ -35,6 +37,19 @@ func TestSelectQuery(t *testing.T) {
 	t.Log("Select Query executed successfully")
 }
 
+func TestGetAdsByFilterId(t *testing.T) {
+	ads, err := testRepo.GetAdsByFilterId(1)
+	if err != nil {
+		t.Fatalf("GetAdsByFilterId failed: %v", err)
+	}
+
+	jads, err := json.Marshal(ads)
+
+	if err != nil {
+		t.Fatalf("Marshal ads failed: %v", err)
+	}
+	fmt.Print(string(jads))
+}
 func TestGetAllFilters(t *testing.T) {
 	var repository = database.NewRepository(testDbService)
 	filters, err := repository.GetAllFilters()
@@ -75,7 +90,7 @@ func TestSearchAdIDs(t *testing.T) {
 	filter := models.Filter{
 		PriceRange: &models.Range{Min: 1000, Max: 5000},
 	}
-	ads, err := repository.SearchAds(filter,"id")
+	ads, err := repository.SearchAds(filter, "id")
 	fmt.Printf("%+v\n", ads)
 	assert.NoError(t, err)
 }
