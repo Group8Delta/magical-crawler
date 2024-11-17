@@ -9,6 +9,7 @@ import (
 	"magical-crwler/services/alerting"
 	"magical-crwler/services/bot"
 	"magical-crwler/services/crawler"
+	"magical-crwler/services/watchList"
 	"os"
 	"time"
 )
@@ -55,12 +56,11 @@ func main() {
 	filterService := FilterServices.NewFilterServices(repo)
 	runFilterRunner(*filterService)
 
+	watchListService := watchList.New(repo, bot)
+	go watchListService.RunWatcher()
+
 	bot.StartBot(dbService.GetDb())
 	// http.ListenAndServe(":"+config.Port, nil)
-}
-
-func runWatchListRunner(conf *config.Config, repo database.IRepository) {
-
 }
 
 func initialCrawlers(config *config.Config, repo database.IRepository, alerter *alerting.Alerter) {

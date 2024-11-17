@@ -55,6 +55,7 @@ type PriceHistoryDto struct {
 }
 
 type WatchListDto struct {
+	UserId      int
 	FilterId    int
 	UpdateCycle int
 }

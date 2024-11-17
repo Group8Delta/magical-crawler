@@ -30,6 +30,8 @@ type IRepository interface {
 	GetCurrentMinuteWatchLists() ([]models.WatchList, error)
 	DeleteWatchList(id int) error
 	UpdateWatchList(id int, wl Dtos.WatchListDto) error
+	CreateWatchList(wl Dtos.WatchListDto) (*models.WatchList, error)
+	GetUserById(id int) (*models.User, error)
 }
 
 type Repository struct {
@@ -99,6 +101,12 @@ func (r *Repository) GetAdByLink(link string) (*models.Ad, error) {
 	ad := models.Ad{}
 	res := r.db.GetDb().Where("link = ?", link).First(&ad)
 	return &ad, res.Error
+}
+
+func (r *Repository) GetUserById(id int) (*models.User, error) {
+	user := models.User{}
+	res := r.db.GetDb().Where("id = ?", id).First(&user)
+	return &user, res.Error
 }
 
 func (r *Repository) CreateAd(ad Dtos.AdDto) *models.Ad {
@@ -383,8 +391,26 @@ func (r *Repository) UpdateWatchList(id int, wl Dtos.WatchListDto) error {
 	if res.Error != nil {
 		return res.Error
 	}
-	w.FilterID = uint(wl.FilterId)
-	w.UpdateCycle = wl.UpdateCycle
 
+	if wl.FilterId > 0 {
+		w.FilterID = uint(wl.FilterId)
+	}
+	if wl.UpdateCycle > 0 {
+		w.UpdateCycle = wl.UpdateCycle
+	}
+	w.NextRunTime = time.Now().Add(time.Duration(w.UpdateCycle) * time.Minute)
 	return r.db.GetDb().Save(&w).Error
+}
+
+func (r *Repository) CreateWatchList(wl Dtos.WatchListDto) (*models.WatchList, error) {
+
+	w := models.WatchList{
+		UserID:      uint(wl.UserId),
+		FilterID:    uint(wl.FilterId),
+		UpdateCycle: wl.UpdateCycle,
+		NextRunTime: time.Now().Add(time.Duration(wl.UpdateCycle) * time.Minute),
+	}
+
+	err := r.db.GetDb().Create(&w).Error
+	return &w, err
 }
