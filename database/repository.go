@@ -381,7 +381,8 @@ func (r *Repository) DeleteWatchList(id int) error {
 	if res.Error != nil {
 		return res.Error
 	}
-	w.DeletedAt = time.Now()
+	now := time.Now()
+	w.DeletedAt = &now
 
 	return r.db.GetDb().Save(&w).Error
 }
@@ -410,6 +411,7 @@ func (r *Repository) CreateWatchList(wl Dtos.WatchListDto) (*models.WatchList, e
 		FilterID:    uint(wl.FilterId),
 		UpdateCycle: wl.UpdateCycle,
 		NextRunTime: time.Now().Add(time.Duration(wl.UpdateCycle) * time.Minute),
+		DeletedAt:   nil,
 	}
 
 	err := r.db.GetDb().Create(&w).Error

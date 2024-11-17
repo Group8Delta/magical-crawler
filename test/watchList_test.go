@@ -9,25 +9,30 @@ import (
 
 var wl *models.WatchList
 
-func TestCreateWatchList(t *testing.T) {
-	wl, err := testWatchListService.CreateWatchList(Dtos.WatchListDto{UserId: 1, FilterId: 1, UpdateCycle: 1})
+func TestWatchListFunctionality(t *testing.T) {
+	wl, err := testWatchListService.CreateWatchList(Dtos.WatchListDto{UserId: 1, FilterId: 1, UpdateCycle: 2})
 	if err != nil {
 		t.Fatalf("error in create watch list : %v", err)
 	}
 	t.Logf("created watch list: %v", wl)
-}
-func TestUpdateWatchList(t *testing.T) {
-	err := testWatchListService.UpdateWatchList(int(wl.ID), Dtos.WatchListDto{UpdateCycle: 2})
+
+	err = testWatchListService.UpdateWatchList(int(wl.ID), Dtos.WatchListDto{UpdateCycle: 1})
 	if err != nil {
 		t.Fatalf("error in update watch list : %v", err)
 	}
 	t.Logf("watch list updated")
-}
 
-func TestSendNotify(t *testing.T) {
 	wg := sync.WaitGroup{}
-	err := testWatchListService.SendAdsByWatchList(wl, &wg)
+	wg.Add(1)
+	err = testWatchListService.SendAdsByWatchList(wl, &wg)
+	wg.Wait()
 	if err != nil {
 		t.Fatalf("error in update watch list : %v", err)
+	}
+
+	err = testWatchListService.DeleteWatchList(int(wl.ID))
+
+	if err != nil {
+		t.Fatalf("error in delete watch list : %v", err)
 	}
 }

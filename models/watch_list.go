@@ -8,5 +8,5 @@ type WatchList struct {
 	FilterID    uint
 	UpdateCycle int
 	NextRunTime time.Time
-	DeletedAt   time.Time
+	DeletedAt   *time.Time `gorm:"default:null"`
 }
