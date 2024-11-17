@@ -32,13 +32,14 @@ type DivarCrawler struct {
 	alerter      *alerting.Alerter
 }
 
-func (c *DivarCrawler) CrawlAdsLinks(ctx context.Context, url string) ([]string, error) {
+func (c *DivarCrawler) CrawlAdsLinks(ctx context.Context, url string) ([]string, int, error) {
+	numRequest := 0
 	ctx, cancel := chromedp.NewContext(ctx)
 	defer cancel()
 
 	select {
 	case <-ctx.Done():
-		return make([]string, 0), errors.New("time-out")
+		return make([]string, 0), numRequest, errors.New("time-out")
 	default:
 		deepth := 0
 		var lastHeight, newHeight int64
@@ -48,7 +49,7 @@ func (c *DivarCrawler) CrawlAdsLinks(ctx context.Context, url string) ([]string,
 			chromedp.Navigate(url),
 		)
 		if err != nil {
-			return nil, err
+			return nil, numRequest, err
 		}
 		chromedp.Sleep(500 * time.Millisecond)
 		for {
@@ -56,6 +57,7 @@ func (c *DivarCrawler) CrawlAdsLinks(ctx context.Context, url string) ([]string,
 			err = chromedp.Run(ctx,
 				chromedp.Evaluate(`document.body.scrollHeight`, &newHeight),
 			)
+			numRequest++
 
 			if err != nil {
 				log.Println(err)
@@ -114,7 +116,7 @@ func (c *DivarCrawler) CrawlAdsLinks(ctx context.Context, url string) ([]string,
 
 		doc, err := goquery.NewDocumentFromReader(strings.NewReader(allHTMLContent.String()))
 		if err != nil {
-			return nil, err
+			return nil, numRequest, err
 		}
 
 		links := []string{}
@@ -126,13 +128,14 @@ func (c *DivarCrawler) CrawlAdsLinks(ctx context.Context, url string) ([]string,
 				fmt.Println("No href found in h1 link.")
 			}
 		})
-		return links, nil
+		return links, numRequest, nil
 	}
 }
 
-func (c *DivarCrawler) CrawlPageUrl(ctx context.Context, pageUrl string) (*Ad, error) {
+func (c *DivarCrawler) CrawlPageUrl(ctx context.Context, pageUrl string) (*Ad, int, error) {
 	var ad Ad = Ad{}
 	ad.Link = pageUrl
+	requestCount := 0
 
 	var panicErr error
 	defer func() {
@@ -146,7 +149,7 @@ func (c *DivarCrawler) CrawlPageUrl(ctx context.Context, pageUrl string) (*Ad, e
 	defer cancel()
 	select {
 	case <-ctx.Done():
-		return &ad, errors.New("time-out")
+		return &ad, requestCount, errors.New("time-out")
 	default:
 		// Variables to store extracted data
 		var Title string
@@ -293,12 +296,14 @@ func (c *DivarCrawler) CrawlPageUrl(ctx context.Context, pageUrl string) (*Ad, e
 			}),
 		)
 
+		requestCount++
+
 		if err != nil {
-			return &ad, err
+			return &ad, requestCount, err
 		}
 
 		if Title == "" {
-			return &ad, errors.New("error occurred in crawling this page.")
+			return &ad, requestCount, errors.New("error occurred in crawling this page.")
 		}
 
 		for _, v := range details {
@@ -436,7 +441,7 @@ func (c *DivarCrawler) CrawlPageUrl(ctx context.Context, pageUrl string) (*Ad, e
 		}
 		ad.Lon = float32(lon)
 
-		return &ad, panicErr
+		return &ad, requestCount, panicErr
 	}
 
 }
@@ -465,9 +470,13 @@ func (c *DivarCrawler) RunCrawler() {
 			}
 		}
 
-		fmt.Printf("errors count:%v\n", len(errors))
+		cf, err := wp.GetCrawlerFunctionalityReport()
+		if err != nil {
+			fmt.Println("Error in saving divar functionality report ", err)
+		} else {
+			c.dbRepository.SaveCrawlerFunctionality(cf) // save monitoring data in database
+		}
 		cancel()
-
 	}
 
 }

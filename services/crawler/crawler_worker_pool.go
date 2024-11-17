@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"magical-crwler/models"
 	"runtime"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -19,6 +21,7 @@ type WorkerPoll struct {
 	done         chan bool
 	jobsQueue    chan Task
 	resultsQueue chan Result
+	requestCount atomic.Int64
 }
 
 type Task struct {
@@ -68,10 +71,11 @@ func (wp *WorkerPoll) worker(id int, ctx context.Context, wg *sync.WaitGroup) {
 		start := time.Now()
 		var memStatsStart, memStatsEnd runtime.MemStats
 		runtime.ReadMemStats(&memStatsStart)
-		crawlData, err := wp.crawler.CrawlPageUrl(ctx, task.Link)
+		crawlData, requestCount, err := wp.crawler.CrawlPageUrl(ctx, task.Link)
+		wp.requestCount.Add(int64(requestCount))
 		runtime.ReadMemStats(&memStatsEnd)
-
 		ramUsage := 0
+
 		if memStatsEnd.HeapAlloc > memStatsStart.HeapAlloc {
 			ramUsage = int((memStatsEnd.HeapAlloc - memStatsStart.HeapAlloc) / (1024)) // Convert to KB
 		}
@@ -105,7 +109,7 @@ func (wp *WorkerPoll) resultsCollector(done chan bool) {
 
 func (wp *WorkerPoll) Start(ctx context.Context) {
 	log.Printf("start worker-pool with %d worker", wp.numWorkers)
-	links, err := wp.crawler.CrawlAdsLinks(ctx, wp.mainLink)
+	links, requestCount, err := wp.crawler.CrawlAdsLinks(ctx, wp.mainLink)
 	if err != nil {
 		log.Println("Error in crawl main page with crawler ", err)
 		return
@@ -117,6 +121,7 @@ func (wp *WorkerPoll) Start(ctx context.Context) {
 	// Start the dispatcher to crawl pages and start workers
 	wp.dispatcher(ctx)
 	<-wp.done
+	wp.requestCount.Add(int64(requestCount))
 }
 
 func NewWorkerPool(mainLink string, numWorkers int, crawler CrawlerInterface) *WorkerPoll {
@@ -133,10 +138,41 @@ func NewWorkerPool(mainLink string, numWorkers int, crawler CrawlerInterface) *W
 	}
 }
 
-func (wp WorkerPoll) GetResults() []Result {
+func (wp *WorkerPoll) GetResults() []Result {
 	return wp.results
 }
 
-func (wp WorkerPoll) GetErrors() []Result {
+func (wp *WorkerPoll) GetErrors() []Result {
 	return wp.errors
+}
+
+// generate one crawl metrics
+func (wp *WorkerPoll) GetCrawlerFunctionalityReport() (models.CrawlerFunctionality, error) {
+	totalTimeSpent := 0
+	totalRamUsage := 0
+	totalCpuUsage := 0
+
+	for index:= range wp.results{
+		result:=wp.results[index]
+		totalTimeSpent+=int(result.TimeSpent.Seconds())
+		totalCpuUsage+=result.CPUUsage
+		totalRamUsage+=result.RAMUsage
+	}
+
+	for index:= range wp.errors{
+		err:=wp.results[index]
+		totalTimeSpent+=int(err.TimeSpent.Seconds())
+		totalCpuUsage+=err.CPUUsage
+		totalRamUsage+=err.RAMUsage
+	}
+
+	cf := models.CrawlerFunctionality{
+		Date:               time.Now(),
+		Duration:           totalTimeSpent,
+		CPUUsage:           totalCpuUsage,
+		RAMUsage:           totalRamUsage,
+		TotalRequests:      int(wp.requestCount.Load()),
+		SuccessfulRequests: len(wp.results),
+	}
+	return cf, nil
 }

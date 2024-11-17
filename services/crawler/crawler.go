@@ -26,8 +26,8 @@ var CrawlerTypes []CrawlerType = []CrawlerType{
 }
 
 type CrawlerInterface interface {
-	CrawlAdsLinks(ctx context.Context, searchUrl string) ([]string, error)
-	CrawlPageUrl(ctx context.Context, pageUrl string) (*Ad, error)
+	CrawlAdsLinks(ctx context.Context, searchUrl string) ([]string, int, error)
+	CrawlPageUrl(ctx context.Context, pageUrl string) (*Ad,int, error)
 	RunCrawler()
 }
 
@@ -70,10 +70,9 @@ func SaveAdData(repo database.IRepository, ad *Ad) error {
 		}
 		if ad.Price != uint(*a.Price) || ad.RentPrice != uint(*a.RentPrice) {
 			repo.CreatePriceHistory(Dtos.PriceHistoryDto{AdID: uint(nad.ID), Price: *nad.Price, RentPrice: nad.RentPrice, SubmittedAt: time.Now()})
-
 		}
-
 	}
 	return nil
-
 }
+
+
