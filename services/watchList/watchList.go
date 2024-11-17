@@ -81,6 +81,10 @@ func (w *WatchList) SendAdsByWatchList(wl *models.WatchList, wg *sync.WaitGroup)
 		fmt.Println(err)
 		return err
 	}
+	fmt.Printf("sending watch list ads:\n%v\n to user\n", ads)
+	if w.notifier == nil {
+		return nil
+	}
 	return w.notifier.Notify(strconv.Itoa(int(user.TelegramID)), &notification.Message{Title: "your watch list ads:", Content: c})
 }
 

@@ -5,6 +5,7 @@ import (
 	"magical-crwler/config"
 	"magical-crwler/database"
 	"magical-crwler/services/crawler"
+	"magical-crwler/services/watchList"
 	"os"
 	"testing"
 )
@@ -14,6 +15,8 @@ var testRepo database.IRepository
 
 var testDivarCrawler crawler.CrawlerInterface
 var testSheypoorCrawler crawler.CrawlerInterface
+
+var testWatchListService *watchList.WatchList
 
 func TestMain(m *testing.M) {
 	testDbService = database.New()
@@ -37,6 +40,8 @@ func TestMain(m *testing.M) {
 		panic("Failed to initial sheypoor Crawler: " + err.Error())
 	}
 	testSheypoorCrawler = sheypoorCrawler
+
+	testWatchListService = watchList.New(testRepo, nil)
 
 	code := m.Run()
 
