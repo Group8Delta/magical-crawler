@@ -139,11 +139,8 @@ const (
 
 // Property Type Buttons
 const (
-	PropertyApartment  = "آپارتمان"
-	PropertyVilla      = "ویلا"
-	PropertyCommercial = "تجاری"
-	PropertyOffice     = "اداری"
-	PropertyLand       = "زمین"
+	PropertyApartment = "آپارتمان"
+	PropertyVilla     = "ویلا"
 )
 
 // Building Age Buttons - From New to Over 10 Years
