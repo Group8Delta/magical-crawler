@@ -2,7 +2,6 @@ package bot
 
 import (
 	"fmt"
-	"log"
 	"magical-crwler/constants"
 	"magical-crwler/models"
 	"magical-crwler/models/Dtos"
@@ -35,26 +34,25 @@ type FilterValue struct {
 }
 
 func (f *Filters) startSearch(db *gorm.DB) ([]models.Ad, error) {
-	// filters := models.Filter{
-	// 	PriceRange:            f.price.data.PriceRange,
-	// 	RentPriceRange:        f.price.data.RentPriceRange,
-	// 	ForRent:               f.adType.data.ForRent,
-	// 	City:                  f.location.data.City,
-	// 	SizeRange:             f.area.data.SizeRange,
-	// 	BedroomRange:          f.rooms.data.BedroomRange,
-	// 	FloorRange:            f.floor.data.FloorRange,
-	// 	HasStorage:            f.storage.data.HasStorage,
-	// 	HasElevator:           f.elevator.data.HasElevator,
-	// 	AgeRange:              f.buildingAge.data.AgeRange,
-	// 	IsApartment:           f.propertyType.data.IsApartment,
-	// 	CreationTimeRangeFrom: f.adDate.data.CreationTimeRangeFrom,
-	// 	CreationTimeRangeTo:   time.Now(),
-	//
-	log.Printf("Price %d", f.price.data.PriceRange.Min)
-	// err := models.CreateNewFilter(db, &filters)
-	// if err != nil {
-	// 	return nil, err
-	// }
+	filters := models.Filter{
+		PriceRange:            f.price.data.PriceRange,
+		RentPriceRange:        f.price.data.RentPriceRange,
+		ForRent:               f.adType.data.ForRent,
+		City:                  f.location.data.City,
+		SizeRange:             f.area.data.SizeRange,
+		BedroomRange:          f.rooms.data.BedroomRange,
+		FloorRange:            f.floor.data.FloorRange,
+		HasStorage:            f.storage.data.HasStorage,
+		HasElevator:           f.elevator.data.HasElevator,
+		AgeRange:              f.buildingAge.data.AgeRange,
+		IsApartment:           f.propertyType.data.IsApartment,
+		CreationTimeRangeFrom: f.adDate.data.CreationTimeRangeFrom,
+		CreationTimeRangeTo:   time.Now(),
+	}
+	err := models.CreateNewFilter(db, &filters)
+	if err != nil {
+		return nil, err
+	}
 	return nil, nil
 }
 func (f *Filters) removeAllValue() {
@@ -123,9 +121,8 @@ func SearchHandlers(b *Bot, db *gorm.DB) func(ctx telebot.Context) error {
 		}
 
 		YNButtons = []telebot.Btn{
-			selector["yes-no"].Data(constants.Yes, "YesNo", "1"),
-			selector["yes-no"].Data(constants.No, "YesNo", "0"),
-			selector["yes-no"].Data(constants.Unknown, "YesNo", "-1"),
+			selector["yes-no"].Data(constants.Yes, "YesNo", "Yes"),
+			selector["yes-no"].Data(constants.No, "YesNo", "No"),
 		}
 
 		goBtn     = selector["menu"].Data(constants.GoButton, "Filters", "Search")
@@ -309,7 +306,7 @@ func SearchHandlers(b *Bot, db *gorm.DB) func(ctx telebot.Context) error {
 	selector["property"].Inline(selector["menu"].Split(3, filters.propertyType.subButton)...)
 	selector["age"].Inline(selector["menu"].Split(3, filters.buildingAge.subButton)...)
 	selector["floor"].Inline(selector["menu"].Split(3, filters.floor.subButton)...)
-	selector["yes-no"].Inline(selector["menu"].Split(3, YNButtons)...)
+	selector["yes-no"].Inline(selector["menu"].Split(2, YNButtons)...)
 	selector["ad-date"].Inline(selector["menu"].Split(2, filters.adDate.subButton)...)
 	selector["location"].Inline(selector["menu"].Split(4, filters.location.subButton)...)
 
@@ -321,7 +318,7 @@ func SearchHandlers(b *Bot, db *gorm.DB) func(ctx telebot.Context) error {
 			b.Bot.Handle(&telebot.InlineButton{Unique: "AdType"}, func(c telebot.Context) error {
 				data := getValue(c.Data())
 				filters.adType.value = data[0]
-				filters.location.data.ForRent, _ = strconv.ParseBool(data[1])
+				filters.adType.data.ForRent, _ = strconv.ParseBool(data[1])
 				return c.EditOrSend(filters.message(), selector["menu"])
 			})
 			return ctx.EditOrSend(filters.message(), selector["ad-type"])
@@ -338,8 +335,7 @@ func SearchHandlers(b *Bot, db *gorm.DB) func(ctx telebot.Context) error {
 				if err != nil {
 					return err
 				}
-				println(min, max)
-				filters.location.data.PriceRange = &models.Range{Min: min, Max: max}
+				filters.price.data.PriceRange = &models.Range{Min: min, Max: max}
 				return c.EditOrSend(filters.message(), selector["menu"])
 			})
 			return ctx.EditOrSend(filters.message(), selector["price"])
@@ -356,7 +352,7 @@ func SearchHandlers(b *Bot, db *gorm.DB) func(ctx telebot.Context) error {
 				if err != nil {
 					return err
 				}
-				filters.location.data.SizeRange = &models.Range{Min: min, Max: max}
+				filters.area.data.SizeRange = &models.Range{Min: min, Max: max}
 				return c.EditOrSend(filters.message(), selector["menu"])
 			})
 			return ctx.EditOrSend(filters.message(), selector["area"])
@@ -364,11 +360,16 @@ func SearchHandlers(b *Bot, db *gorm.DB) func(ctx telebot.Context) error {
 			b.Bot.Handle(&telebot.InlineButton{Unique: "NumberOfRooms"}, func(c telebot.Context) error {
 				data := getValue(c.Data())
 				filters.rooms.value = data[0]
-				max, err := strconv.Atoi(data[1])
+				rooms := strings.Split((data[1]), ",")
+				min, err := strconv.Atoi(rooms[0])
 				if err != nil {
 					return err
 				}
-				filters.location.data.BedroomRange = &models.Range{Min: 0, Max: max}
+				max, err := strconv.Atoi(rooms[1])
+				if err != nil {
+					return err
+				}
+				filters.rooms.data.BedroomRange = &models.Range{Min: min, Max: max}
 				return c.EditOrSend(filters.message(), selector["menu"])
 			})
 			return ctx.EditOrSend(filters.message(), selector["room"])
@@ -388,11 +389,16 @@ func SearchHandlers(b *Bot, db *gorm.DB) func(ctx telebot.Context) error {
 			b.Bot.Handle(&telebot.InlineButton{Unique: "Age"}, func(c telebot.Context) error {
 				data := getValue(c.Data())
 				filters.buildingAge.value = data[0]
-				max, err := strconv.Atoi(data[1])
+				age := strings.Split((data[1]), ",")
+				min, err := strconv.Atoi(age[0])
 				if err != nil {
 					return err
 				}
-				filters.location.data.AgeRange = &models.Range{Min: 0, Max: max}
+				max, err := strconv.Atoi(age[1])
+				if err != nil {
+					return err
+				}
+				filters.buildingAge.data.AgeRange = &models.Range{Min: min, Max: max}
 				return c.EditOrSend(filters.message(), selector["menu"])
 			})
 			return ctx.EditOrSend(filters.message(), selector["age"])
@@ -400,11 +406,16 @@ func SearchHandlers(b *Bot, db *gorm.DB) func(ctx telebot.Context) error {
 			b.Bot.Handle(&telebot.InlineButton{Unique: "Floor"}, func(c telebot.Context) error {
 				data := getValue(c.Data())
 				filters.floor.value = data[0]
-				max, err := strconv.Atoi(data[1])
+				floor := strings.Split((data[1]), ",")
+				min, err := strconv.Atoi(floor[0])
 				if err != nil {
 					return err
 				}
-				filters.location.data.FloorRange = &models.Range{Min: 0, Max: max}
+				max, err := strconv.Atoi(floor[1])
+				if err != nil {
+					return err
+				}
+				filters.floor.data.FloorRange = &models.Range{Min: min, Max: max}
 				return c.EditOrSend(filters.message(), selector["menu"])
 			})
 			return ctx.EditOrSend(filters.message(), selector["floor"])
@@ -416,7 +427,7 @@ func SearchHandlers(b *Bot, db *gorm.DB) func(ctx telebot.Context) error {
 				if err != nil {
 					return err
 				}
-				filters.location.data.HasStorage = &b
+				filters.storage.data.HasStorage = &b
 				return c.EditOrSend(filters.message(), selector["menu"])
 			})
 			return ctx.EditOrSend(filters.message(), selector["yes-no"])
@@ -428,7 +439,7 @@ func SearchHandlers(b *Bot, db *gorm.DB) func(ctx telebot.Context) error {
 				if err != nil {
 					return err
 				}
-				filters.location.data.HasElevator = &b
+				filters.elevator.data.HasElevator = &b
 				return c.EditOrSend(filters.message(), selector["menu"])
 			})
 			return ctx.EditOrSend(filters.message(), selector["yes-no"])
@@ -528,9 +539,8 @@ func getValue(value string) []string {
 		"PR-900000+":   {constants.PriceOver900B, "900000,0"},
 		"at-buy":       {constants.ForBuy, "false"},
 		"at-rent":      {constants.ForRent, "true"},
-		"-1":           {constants.Unknown, ""},
-		"0":            {constants.No, "false"},
-		"1":            {constants.Yes, "true"},
+		"No":           {constants.No, "false"},
+		"Yes":          {constants.Yes, "true"},
 		"AR-0":         {constants.AreaUnder50, "0,50"},
 		"AR-50":        {constants.Area50To75, "50,75"},
 		"AR-75":        {constants.Area75To100, "75,100"},

@@ -37,6 +37,6 @@ func CreateNewFilter(db *gorm.DB, filters *Filter) error {
 	if result.Error != nil {
 		return result.Error
 	}
-	log.Println(filters)
+	log.Printf("| Added new filter to database, Id: %d |", filters.ID)
 	return nil
 }
