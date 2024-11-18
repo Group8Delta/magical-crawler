@@ -47,23 +47,24 @@ func (b *Bot) Notify(recipientIdentifier string, m *notification.Message) error 
 	}
 	recipient := telebot.ChatID(teleUserId)
 	message := fmt.Sprintf("%s \n\n %s", m.Title, m.Content)
-	if m.Photo == "" {
-		_, err = b.Bot.Send(recipient, message)
+	if m.Photo != "" {
+		photo := &telebot.Photo{
+			File: telebot.FromURL(m.Photo),
+		}
+		album := telebot.Album{photo}
+		album.SetCaption(message)
+		_, err := b.Bot.SendAlbum(recipient, album)
 		if err != nil {
 			return err
 		}
 		return nil
 	} else {
-		photo := &telebot.Photo{
-			File: telebot.FromURL(m.Photo),
-		}
-		_, err := b.Bot.SendAlbum(recipient, telebot.Album{photo})
+		_, err = b.Bot.Send(recipient, message)
 		if err != nil {
 			return err
 		}
 		return nil
 	}
-
 }
 func (b *Bot) RegisterHandlers(db *gorm.DB) {
 	b.Bot.Handle("/menu", func(ctx telebot.Context) error {
@@ -85,6 +86,7 @@ func (b *Bot) RegisterHandlers(db *gorm.DB) {
 	b.Bot.Handle(constants.AddAdminButton, AddAdminHandler(b, db))
 	b.Bot.Handle(constants.RemoveAdminButton, RemoveAdminHandler(b, db))
 	b.Bot.Handle(constants.ListAdminsButton, AdminListHandler(b, db))
+	b.Bot.Handle(constants.CrawlerStatusButton, CrawlerStatusLogs(b, db))
 }
 
 func (b *Bot) StartBot(db *gorm.DB) {
