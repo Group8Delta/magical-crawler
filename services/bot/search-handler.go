@@ -495,9 +495,19 @@ func SearchHandlers(b *Bot, db *gorm.DB) func(ctx telebot.Context) error {
 				log.Println(err)
 				return ctx.Send(err)
 			}
-			for _, ad := range ads {
-				ctx.Send(utils.GenerateFilterMessage(ad), telebot.ModeHTML)
+			if len(ads) < 1 {
+				return ctx.Send(constants.NoAdMsg)
 			}
+			for _, ad := range ads {
+				photoURL := ad.PhotoUrl
+				if photoURL != nil {
+					pic := &telebot.Photo{File: telebot.FromURL(*photoURL), Caption: utils.GenerateFilterMessage(ad), CaptionAbove: true}
+					ctx.SendAlbum(telebot.Album{pic}, telebot.ModeHTML)
+				} else {
+					ctx.Send(utils.GenerateFilterMessage(ad), telebot.ModeHTML)
+				}
+			}
+			filters.removeAllValue()
 			return ctx.Send(constants.SearchMsg)
 		case "Remove":
 			filters.removeAllValue()
