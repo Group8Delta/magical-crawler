@@ -613,10 +613,10 @@ func getValue(value string) []string {
 		"FLR-9":        {constants.Floor9, "0,9"},
 		"FLR-10":       {constants.Floor10, "0,10"},
 		"FLR-10+":      {constants.FloorOver10, "0,11"},
-		"Tehran":       {constants.Tehran, "Tehran"},
-		"Zanjan":       {constants.Zanjan, "Zanjan"},
-		"Khoram":       {constants.Khoram, "Khoram"},
-		"Mazandaran":   {constants.Mazandaran, "Mazandaran"},
+		"Tehran":       {constants.Tehran, constants.Tehran},
+		"Zanjan":       {constants.Zanjan, constants.Zanjan},
+		"Khoram":       {constants.Khoram, constants.Khoram},
+		"Mazandaran":   {constants.Mazandaran, constants.Mazandaran},
 	}
 	return btnMap[value]
 }
