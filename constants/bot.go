@@ -228,9 +228,7 @@ const (
 	AdminNotFound          = "ادمین پیدا نشد"
 	UserNotFound           = "کاربر پیدا نشد"
 	EmptyAdminList         = "لیست ادمین ها خالی است"
-	EmptyCrawlerStatusList         = "لیست لاگ عملکرد کرالر خالی است"
 	AdminList              = "لیست ادمین ها"
-	CrawlerStatusList              = "لیست لاگ عملکرد کرالر "
 	AdminID                = "آیدی"
 	AdminName              = "اسم"
 )
