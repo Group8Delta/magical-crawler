@@ -3,6 +3,7 @@ package notification
 type Message struct {
 	Title   string
 	Content string
+	Photo string
 }
 
 type Notifier interface {
