@@ -137,10 +137,17 @@ func (s FilterServices) ApplyFilters() error {
 			s.logger.Error(fmt.Sprintf("Error in fetching ads :%s", err.Error()))
 			continue
 		}
-		messageContent := utils.GenerateFilterMessage(newAds)
-		msg := notification.Message{Content: messageContent, Title: ""}
+
 		if s.notifier != nil {
-			s.notifier.Notify(fmt.Sprintf("%s", user.TelegramID), &msg)
+			for i := 0; i < len(newAds); i++ {
+				ad := newAds[i]
+				messageContent := utils.GenerateFilterMessage(ad)
+				msg := notification.Message{Content: messageContent}
+				if *ad.PhotoUrl != "" {
+					msg.Photo = *ad.PhotoUrl
+				}
+				s.notifier.Notify(fmt.Sprintf("%d", user.TelegramID), &msg)
+			}
 		}
 		s.repository.SaveFilterAds(diff, user.ID, filter.ID)
 	}

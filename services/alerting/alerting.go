@@ -27,7 +27,7 @@ func (n *Alerter) RunAdminNotifier() {
 	go func() {
 		for {
 
-			if !(adminSelector >= 0 && adminSelector < len(config.AdminUserIds)) {
+			if !(adminSelector >= 0 && adminSelector < len(config.AdminTelegramIds)) {
 				adminSelector = 0
 				continue
 			}
@@ -38,7 +38,7 @@ func (n *Alerter) RunAdminNotifier() {
 			m := n.AlertQueue.Pop().(*Alert)
 			fmt.Printf("alert found:%v\n", m)
 			if m != nil {
-				recipientIdentifier := strconv.Itoa(config.AdminUserIds[adminSelector])
+				recipientIdentifier := strconv.Itoa(config.AdminTelegramIds[adminSelector])
 				err := n.notifier.Notify(recipientIdentifier, &notification.Message{Title: m.Title, Content: m.Content})
 				if err != nil {
 					fmt.Println(err.Error())

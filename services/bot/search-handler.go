@@ -2,60 +2,88 @@ package bot
 
 import (
 	"fmt"
+	"log"
 	"magical-crwler/constants"
+	"magical-crwler/database"
 	"magical-crwler/models"
+	"magical-crwler/models/Dtos"
+	"magical-crwler/utils"
+	"strconv"
+	"strings"
 	"time"
 
 	"gopkg.in/telebot.v4"
+	"gorm.io/gorm"
 )
 
 type Filters struct {
-	adType       FilterValue
-	price        FilterValue
-	area         FilterValue
-	rooms        FilterValue
-	propertyType FilterValue
-	buildingAge  FilterValue
-	floor        FilterValue
-	storage      FilterValue
-	elevator     FilterValue
-	adDate       FilterValue
-	location     FilterValue
+	adType       *FilterValue
+	price        *FilterValue
+	area         *FilterValue
+	rooms        *FilterValue
+	propertyType *FilterValue
+	buildingAge  *FilterValue
+	floor        *FilterValue
+	storage      *FilterValue
+	elevator     *FilterValue
+	adDate       *FilterValue
+	location     *FilterValue
 }
 type FilterValue struct {
 	value     string
-	data      interface{}
+	data      Dtos.FilterDto
 	button    telebot.Btn
 	subButton []telebot.Btn
 }
 
-func (f *Filters) startSearch() []models.Ad {
-
-	return nil
+func (f *Filters) startSearch(repo database.IRepository) ([]models.Ad, error) {
+	filters := Dtos.FilterDto{
+		PriceRange:            f.price.data.PriceRange,
+		RentPriceRange:        f.price.data.RentPriceRange,
+		ForRent:               f.adType.data.ForRent,
+		City:                  f.location.data.City,
+		SizeRange:             f.area.data.SizeRange,
+		BedroomRange:          f.rooms.data.BedroomRange,
+		FloorRange:            f.floor.data.FloorRange,
+		HasStorage:            f.storage.data.HasStorage,
+		HasElevator:           f.elevator.data.HasElevator,
+		AgeRange:              f.buildingAge.data.AgeRange,
+		IsApartment:           f.propertyType.data.IsApartment,
+		CreationTimeRangeFrom: f.adDate.data.CreationTimeRangeFrom,
+		CreationTimeRangeTo:   time.Now(),
+	}
+	filterModel := repo.CreateFilter(filters)
+	ads, err := repo.GetAdsByFilterId(int(filterModel.ID))
+	if err != nil {
+		return nil, err
+	}
+	return ads, nil
 }
 func (f *Filters) removeAllValue() {
 	f.adType.value = ""
-	f.adType.data = nil
+	f.adType.data.ForRent = false
 	f.price.value = ""
-	f.price.data = nil
+	f.price.data.PriceRange = nil
 	f.area.value = ""
-	f.area.data = nil
+	f.area.data.SizeRange = nil
 	f.rooms.value = ""
-	f.rooms.data = nil
+	f.rooms.data.BedroomRange = nil
 	f.propertyType.value = ""
-	f.propertyType.data = nil
+	f.propertyType.data.IsApartment = nil
 	f.buildingAge.value = ""
-	f.buildingAge.data = nil
+	f.buildingAge.data.AgeRange = nil
 	f.floor.value = ""
-	f.floor.data = nil
+	f.floor.data.FloorRange = nil
 	f.storage.value = ""
-	f.storage.data = nil
+	f.storage.data.HasStorage = nil
 	f.elevator.value = ""
-	f.elevator.data = nil
+	f.elevator.data.HasElevator = nil
 	f.adDate.value = ""
-	f.adDate.data = nil
+	f.adDate.data.CreationTimeRangeTo = time.Time{}
+	f.adDate.data.CreationTimeRangeFrom = time.Time{}
 	f.location.value = ""
-	f.location.data = nil
+	f.location.data.City = nil
+	f.location.data.Neighborhood = nil
 }
 
 func (f *Filters) message() string {
@@ -79,7 +107,7 @@ func newReplyMarkup() *telebot.ReplyMarkup {
 	return &telebot.ReplyMarkup{RemoveKeyboard: true, ResizeKeyboard: true}
 }
 
-func SearchHandlers(b *Bot) func(ctx telebot.Context) error {
+func SearchHandlers(b *Bot, db *gorm.DB) func(ctx telebot.Context) error {
 
 	var (
 		selector = map[string]*telebot.ReplyMarkup{
@@ -97,24 +125,25 @@ func SearchHandlers(b *Bot) func(ctx telebot.Context) error {
 		}
 
 		YNButtons = []telebot.Btn{
-			selector["yes-no"].Data(constants.Yes, "YesNo", "1"),
-			selector["yes-no"].Data(constants.No, "YesNo", "0"),
-			selector["yes-no"].Data(constants.Unknown, "YesNo", "-1"),
+			selector["yes-no"].Data(constants.Yes, "YesNo", "Yes"),
+			selector["yes-no"].Data(constants.No, "YesNo", "No"),
 		}
 
 		goBtn     = selector["menu"].Data(constants.GoButton, "Filters", "Search")
 		removeBtn = selector["menu"].Data(constants.RemoveButton, "Filters", "Remove")
 
 		filters = Filters{
-			adType: FilterValue{button: selector["menu"].Data(constants.AdType, "Filters", "AdType"),
+			adType: &FilterValue{button: selector["menu"].Data(constants.AdType, "Filters", "AdType"),
 				value: "",
+				data:  Dtos.FilterDto{},
 				subButton: []telebot.Btn{
 					selector["ad-type"].Data(constants.ForBuy, "AdType", "at-buy"),
 					selector["ad-type"].Data(constants.ForRent, "AdType", "at-rent"),
 				},
 			},
-			price: FilterValue{button: selector["menu"].Data(constants.PriceFilter, "Filters", "Price"),
+			price: &FilterValue{button: selector["menu"].Data(constants.PriceFilter, "Filters", "Price"),
 				value: "",
+				data:  Dtos.FilterDto{},
 				subButton: []telebot.Btn{
 					selector["price"].Data(constants.PriceUnder500M, "PriceRange", "PR-0"),
 					selector["price"].Data(constants.Price500MTo700M, "PriceRange", "PR-500"),
@@ -142,8 +171,9 @@ func SearchHandlers(b *Bot) func(ctx telebot.Context) error {
 					selector["price"].Data(constants.PriceOver900B, "PriceRange", "PR-900000+"),
 				},
 			},
-			area: FilterValue{button: selector["menu"].Data(constants.AreaFilter, "Filters", "Area"),
+			area: &FilterValue{button: selector["menu"].Data(constants.AreaFilter, "Filters", "Area"),
 				value: "",
+				data:  Dtos.FilterDto{},
 				subButton: []telebot.Btn{
 					selector["area"].Data(constants.AreaUnder50, "AreaRange", "AR-0"),
 					selector["area"].Data(constants.Area50To75, "AreaRange", "AR-50"),
@@ -168,8 +198,9 @@ func SearchHandlers(b *Bot) func(ctx telebot.Context) error {
 					selector["area"].Data(constants.AreaOver10000, "AreaRange", "AR-1000+"),
 				},
 			},
-			rooms: FilterValue{button: selector["menu"].Data(constants.RoomsFilter, "Filters", "Rooms"),
+			rooms: &FilterValue{button: selector["menu"].Data(constants.RoomsFilter, "Filters", "Rooms"),
 				value: "",
+				data:  Dtos.FilterDto{},
 				subButton: []telebot.Btn{
 					selector["room"].Data(constants.Bedrooms0, "NumberOfRooms", "NR-0"),
 					selector["room"].Data(constants.Bedrooms1, "NumberOfRooms", "NR-1"),
@@ -185,18 +216,17 @@ func SearchHandlers(b *Bot) func(ctx telebot.Context) error {
 					selector["room"].Data(constants.BedroomsOver10, "NumberOfRooms", "NR-10+"),
 				},
 			},
-			propertyType: FilterValue{button: selector["menu"].Data(constants.PropertyTypeFilter, "Filters", "PropertyType"),
+			propertyType: &FilterValue{button: selector["menu"].Data(constants.PropertyTypeFilter, "Filters", "PropertyType"),
 				value: "",
+				data:  Dtos.FilterDto{},
 				subButton: []telebot.Btn{
 					selector["property"].Data(constants.PropertyApartment, "Property", "PA-Apartment"),
 					selector["property"].Data(constants.PropertyVilla, "Property", "PA-Villa"),
-					selector["property"].Data(constants.PropertyCommercial, "Property", "PA-Commercial"),
-					selector["property"].Data(constants.PropertyOffice, "Property", "PA-Office"),
-					selector["property"].Data(constants.PropertyLand, "Property", "PA-Land"),
 				},
 			},
-			buildingAge: FilterValue{button: selector["menu"].Data(constants.BuildingAgeFilter, "Filters", "BuildingAge"),
+			buildingAge: &FilterValue{button: selector["menu"].Data(constants.BuildingAgeFilter, "Filters", "BuildingAge"),
 				value: "",
+				data:  Dtos.FilterDto{},
 				subButton: []telebot.Btn{
 					selector["age"].Data(constants.BuildingAgeNew, "Age", "BA-New"),
 					selector["age"].Data(constants.BuildingAge1Year, "Age", "BA-1Year"),
@@ -212,8 +242,9 @@ func SearchHandlers(b *Bot) func(ctx telebot.Context) error {
 					selector["age"].Data(constants.BuildingAgeOver10, "Age", "BA-Over10"),
 				},
 			},
-			floor: FilterValue{button: selector["menu"].Data(constants.FloorFilter, "Filters", "Floor"),
+			floor: &FilterValue{button: selector["menu"].Data(constants.FloorFilter, "Filters", "Floor"),
 				value: "",
+				data:  Dtos.FilterDto{},
 				subButton: []telebot.Btn{
 					selector["floor"].Data(constants.Floor0, "Floor", "FLR-0"),
 					selector["floor"].Data(constants.Floor1, "Floor", "FLR-1"),
@@ -229,16 +260,17 @@ func SearchHandlers(b *Bot) func(ctx telebot.Context) error {
 					selector["floor"].Data(constants.FloorOver10, "Floor", "FLR-10+"),
 				},
 			},
-			storage: FilterValue{button: selector["menu"].Data(constants.StorageFilter, "Filters", "Storage"),
+			storage: &FilterValue{button: selector["menu"].Data(constants.StorageFilter, "Filters", "Storage"),
 				value:     "",
 				subButton: YNButtons,
 			},
-			elevator: FilterValue{button: selector["menu"].Data(constants.ElevatorFilter, "Filters", "Elevator"),
+			elevator: &FilterValue{button: selector["menu"].Data(constants.ElevatorFilter, "Filters", "Elevator"),
 				value:     "",
 				subButton: YNButtons,
 			},
-			adDate: FilterValue{button: selector["menu"].Data(constants.AdDateFilter, "Filters", "AdDate"),
+			adDate: &FilterValue{button: selector["menu"].Data(constants.AdDateFilter, "Filters", "AdDate"),
 				value: "",
+				data:  Dtos.FilterDto{},
 				subButton: []telebot.Btn{
 					selector["ad-date"].Data(constants.TimeToday, "Time", "TM-Today"),
 					selector["ad-date"].Data(constants.Time1DayAgo, "Time", "TM-1DayAgo"),
@@ -249,8 +281,9 @@ func SearchHandlers(b *Bot) func(ctx telebot.Context) error {
 					selector["ad-date"].Data(constants.Time1YearAgo, "Time", "TM-1YearAgo"),
 				},
 			},
-			location: FilterValue{button: selector["menu"].Data(constants.LocationFilter, "Filters", "Location"),
+			location: &FilterValue{button: selector["menu"].Data(constants.LocationFilter, "Filters", "Location"),
 				value: "",
+				data:  Dtos.FilterDto{},
 				subButton: []telebot.Btn{
 					selector["location"].Data(constants.Tehran, "City", "Tehran"),
 					selector["location"].Data(constants.Zanjan, "City", "Zanjan"),
@@ -277,7 +310,7 @@ func SearchHandlers(b *Bot) func(ctx telebot.Context) error {
 	selector["property"].Inline(selector["menu"].Split(3, filters.propertyType.subButton)...)
 	selector["age"].Inline(selector["menu"].Split(3, filters.buildingAge.subButton)...)
 	selector["floor"].Inline(selector["menu"].Split(3, filters.floor.subButton)...)
-	selector["yes-no"].Inline(selector["menu"].Split(3, YNButtons)...)
+	selector["yes-no"].Inline(selector["menu"].Split(2, YNButtons)...)
 	selector["ad-date"].Inline(selector["menu"].Split(2, filters.adDate.subButton)...)
 	selector["location"].Inline(selector["menu"].Split(4, filters.location.subButton)...)
 
@@ -288,96 +321,182 @@ func SearchHandlers(b *Bot) func(ctx telebot.Context) error {
 		case "AdType":
 			b.Bot.Handle(&telebot.InlineButton{Unique: "AdType"}, func(c telebot.Context) error {
 				data := getValue(c.Data())
-				filters.adType.value = fmt.Sprintf("%v", data[0])
-				filters.location.data = data[1]
+				filters.adType.value = data[0]
+				filters.adType.data.ForRent, _ = strconv.ParseBool(data[1])
 				return c.EditOrSend(filters.message(), selector["menu"])
 			})
 			return ctx.EditOrSend(filters.message(), selector["ad-type"])
 		case "Price":
 			b.Bot.Handle(&telebot.InlineButton{Unique: "PriceRange"}, func(c telebot.Context) error {
 				data := getValue(c.Data())
-				filters.price.value = fmt.Sprintf("%v", data[0])
-				filters.location.data = data[1]
+				filters.price.value = data[0]
+				priceRange := strings.Split(data[1], ",")
+				min, err := strconv.Atoi(priceRange[0])
+				if err != nil {
+					return err
+				}
+				max, err := strconv.Atoi(priceRange[1])
+				if err != nil {
+					return err
+				}
+				filters.price.data.PriceRange = &models.Range{Min: min, Max: max}
 				return c.EditOrSend(filters.message(), selector["menu"])
 			})
 			return ctx.EditOrSend(filters.message(), selector["price"])
 		case "Area":
 			b.Bot.Handle(&telebot.InlineButton{Unique: "AreaRange"}, func(c telebot.Context) error {
 				data := getValue(c.Data())
-				filters.area.value = fmt.Sprintf("%v", data[0])
-				filters.location.data = data[1]
+				filters.area.value = data[0]
+				areaRange := strings.Split(data[1], ",")
+				min, err := strconv.Atoi(areaRange[0])
+				if err != nil {
+					return err
+				}
+				max, err := strconv.Atoi(areaRange[1])
+				if err != nil {
+					return err
+				}
+				filters.area.data.SizeRange = &models.Range{Min: min, Max: max}
 				return c.EditOrSend(filters.message(), selector["menu"])
 			})
 			return ctx.EditOrSend(filters.message(), selector["area"])
 		case "Rooms":
 			b.Bot.Handle(&telebot.InlineButton{Unique: "NumberOfRooms"}, func(c telebot.Context) error {
 				data := getValue(c.Data())
-				filters.rooms.value = fmt.Sprintf("%v", data[0])
-				filters.location.data = data[1]
+				filters.rooms.value = data[0]
+				rooms := strings.Split((data[1]), ",")
+				min, err := strconv.Atoi(rooms[0])
+				if err != nil {
+					return err
+				}
+				max, err := strconv.Atoi(rooms[1])
+				if err != nil {
+					return err
+				}
+				filters.rooms.data.BedroomRange = &models.Range{Min: min, Max: max}
 				return c.EditOrSend(filters.message(), selector["menu"])
 			})
 			return ctx.EditOrSend(filters.message(), selector["room"])
 		case "PropertyType":
 			b.Bot.Handle(&telebot.InlineButton{Unique: "Property"}, func(c telebot.Context) error {
 				data := getValue(c.Data())
-				filters.propertyType.value = fmt.Sprintf("%v", data[0])
-				filters.location.data = data[1]
+				filters.propertyType.value = data[0]
+				b, err := strconv.ParseBool(data[1])
+				if err != nil {
+					return err
+				}
+				filters.location.data.IsApartment = &b
 				return c.EditOrSend(filters.message(), selector["menu"])
 			})
 			return ctx.EditOrSend(filters.message(), selector["property"])
 		case "BuildingAge":
 			b.Bot.Handle(&telebot.InlineButton{Unique: "Age"}, func(c telebot.Context) error {
 				data := getValue(c.Data())
-				filters.buildingAge.value = fmt.Sprintf("%v", data[0])
-				filters.location.data = data[1]
+				filters.buildingAge.value = data[0]
+				age := strings.Split((data[1]), ",")
+				min, err := strconv.Atoi(age[0])
+				if err != nil {
+					return err
+				}
+				max, err := strconv.Atoi(age[1])
+				if err != nil {
+					return err
+				}
+				filters.buildingAge.data.AgeRange = &models.Range{Min: min, Max: max}
 				return c.EditOrSend(filters.message(), selector["menu"])
 			})
 			return ctx.EditOrSend(filters.message(), selector["age"])
 		case "Floor":
 			b.Bot.Handle(&telebot.InlineButton{Unique: "Floor"}, func(c telebot.Context) error {
 				data := getValue(c.Data())
-				filters.floor.value = fmt.Sprintf("%v", data[0])
-				filters.location.data = data[1]
+				filters.floor.value = data[0]
+				floor := strings.Split((data[1]), ",")
+				min, err := strconv.Atoi(floor[0])
+				if err != nil {
+					return err
+				}
+				max, err := strconv.Atoi(floor[1])
+				if err != nil {
+					return err
+				}
+				filters.floor.data.FloorRange = &models.Range{Min: min, Max: max}
 				return c.EditOrSend(filters.message(), selector["menu"])
 			})
 			return ctx.EditOrSend(filters.message(), selector["floor"])
 		case "Storage":
 			b.Bot.Handle(&telebot.InlineButton{Unique: "YesNo"}, func(c telebot.Context) error {
 				data := getValue(c.Data())
-				filters.storage.value = fmt.Sprintf("%v", data[0])
-				filters.location.data = data[1]
+				filters.storage.value = data[0]
+				b, err := strconv.ParseBool(data[1])
+				if err != nil {
+					return err
+				}
+				filters.storage.data.HasStorage = &b
 				return c.EditOrSend(filters.message(), selector["menu"])
 			})
 			return ctx.EditOrSend(filters.message(), selector["yes-no"])
 		case "Elevator":
 			b.Bot.Handle(&telebot.InlineButton{Unique: "YesNo"}, func(c telebot.Context) error {
 				data := getValue(c.Data())
-				filters.elevator.value = fmt.Sprintf("%v", data[0])
-				filters.location.data = data[1]
+				filters.elevator.value = data[0]
+				b, err := strconv.ParseBool(data[1])
+				if err != nil {
+					return err
+				}
+				filters.elevator.data.HasElevator = &b
 				return c.EditOrSend(filters.message(), selector["menu"])
 			})
 			return ctx.EditOrSend(filters.message(), selector["yes-no"])
 		case "AdDate":
 			b.Bot.Handle(&telebot.InlineButton{Unique: "Time"}, func(c telebot.Context) error {
-				data := getValue(c.Data())
-				filters.adDate.value = fmt.Sprintf("%v", data[0])
-				filters.location.data = data[1]
+				data := c.Data()
+				now := time.Now()
+				switch data {
+				case "TM-Today":
+					filters.adDate.data.CreationTimeRangeTo = now
+					filters.adDate.value = constants.TimeToday
+				case "TM-1DayAgo":
+					filters.adDate.data.CreationTimeRangeTo = now.AddDate(0, 0, -1)
+					filters.adDate.value = constants.Time1DayAgo
+				case "TM-2DaysAgo":
+					filters.adDate.data.CreationTimeRangeTo = now.AddDate(0, 0, -2)
+					filters.adDate.value = constants.Time2DaysAgo
+				case "TM-3DaysAgo":
+					filters.adDate.data.CreationTimeRangeTo = now.AddDate(0, 0, -3)
+					filters.adDate.value = constants.Time3DaysAgo
+				case "TM-1WeekAgo":
+					filters.adDate.data.CreationTimeRangeTo = now.AddDate(0, 0, -7)
+					filters.adDate.value = constants.Time1WeekAgo
+				case "TM-1MonthAgo":
+					filters.adDate.data.CreationTimeRangeTo = now.AddDate(0, -1, 0)
+					filters.adDate.value = constants.Time1MonthAgo
+				case "TM-1YearAgo":
+					filters.adDate.data.CreationTimeRangeTo = now.AddDate(-1, 0, 0)
+					filters.adDate.value = constants.Time1YearAgo
+				default:
+					filters.adDate.data.CreationTimeRangeTo = now
+				}
+				filters.adDate.data.CreationTimeRangeFrom = now
 				return c.EditOrSend(filters.message(), selector["menu"])
 			})
 			return ctx.EditOrSend(filters.message(), selector["ad-date"])
 		case "Location":
 			b.Bot.Handle(&telebot.InlineButton{Unique: "City"}, func(c telebot.Context) error {
 				data := getValue(c.Data())
-				filters.location.value = fmt.Sprintf("%v", data[0])
-				filters.location.data = data[1]
+				filters.location.value = data[0]
+				filters.location.data.City = &data[1]
 				return c.EditOrSend(filters.message(), selector["menu"])
 			})
 			return ctx.EditOrSend(filters.message(), selector["location"])
 		case "Search":
 			ctx.Send(constants.Loading)
-			ads := filters.startSearch()
+			ads, err := filters.startSearch(b.repo)
+			if err != nil {
+				log.Println(err)
+				return ctx.Send(err)
+			}
 			for _, ad := range ads {
-				ctx.Send(ad)
+				ctx.Send(utils.GenerateFilterMessage(ad), telebot.ModeHTML)
 			}
 			return ctx.Send(constants.SearchMsg)
 		case "Remove":
@@ -396,109 +515,98 @@ func SearchHandlers(b *Bot) func(ctx telebot.Context) error {
 	}
 }
 
-func getValue(value string) []interface{} {
-	btnMap := map[string][]interface{}{
+func getValue(value string) []string {
+	btnMap := map[string][]string{
 
-		"PR-0":          {constants.PriceUnder500M, models.Range{Min: 0, Max: 500}},
-		"PR-500":        {constants.Price500MTo700M, models.Range{Min: 500, Max: 700}},
-		"PR-700":        {constants.Price700MTo900M, models.Range{Min: 700, Max: 900}},
-		"PR-900":        {constants.Price900MTo1B, models.Range{Min: 900, Max: 1_000}},
-		"PR-1000":       {constants.Price1BTo1_5B, models.Range{Min: 1_000, Max: 1_500}},
-		"PR-1500":       {constants.Price1_5BTo2B, models.Range{Min: 1_500, Max: 2_000}},
-		"PR-2000":       {constants.Price2BTo3B, models.Range{Min: 2_000, Max: 3_000}},
-		"PR-3000":       {constants.Price3BTo4B, models.Range{Min: 3_000, Max: 4_000}},
-		"PR-4000":       {constants.Price4BTo5B, models.Range{Min: 4_000, Max: 5_000}},
-		"PR-5000":       {constants.Price5BTo7B, models.Range{Min: 5_000, Max: 7_000}},
-		"PR-7000":       {constants.Price7BTo10B, models.Range{Min: 7_000, Max: 10_000}},
-		"PR-10000":      {constants.Price10BTo15B, models.Range{Min: 10_000, Max: 15_000}},
-		"PR-15000":      {constants.Price15BTo20B, models.Range{Min: 15_000, Max: 20_000}},
-		"PR-20000":      {constants.Price20BTo30B, models.Range{Min: 20_000, Max: 30_000}},
-		"PR-30000":      {constants.Price30BTo40B, models.Range{Min: 30_000, Max: 40_000}},
-		"PR-40000":      {constants.Price40BTo50B, models.Range{Min: 40_000, Max: 50_000}},
-		"PR-50000":      {constants.Price50BTo75B, models.Range{Min: 50_000, Max: 70_000}},
-		"PR-70000":      {constants.Price75BTo100B, models.Range{Min: 70_000, Max: 100_000}},
-		"PR-100000":     {constants.Price100BTo200B, models.Range{Min: 100_000, Max: 200_000}},
-		"PR-200000":     {constants.Price200BTo300B, models.Range{Min: 200_000, Max: 300_000}},
-		"PR-300000":     {constants.Price300BTo500B, models.Range{Min: 300_000, Max: 500_000}},
-		"PR-500000":     {constants.Price500BTo700B, models.Range{Min: 500_000, Max: 700_000}},
-		"PR-700000":     {constants.Price700BTo900B, models.Range{Min: 700_000, Max: 900_000}},
-		"PR-900000+":    {constants.PriceOver900B, models.Range{Min: 900_000, Max: 0}},
-		"at-buy":        {constants.ForBuy, false},
-		"at-rent":       {constants.ForRent, true},
-		"-1":            {constants.Unknown, nil},
-		"0":             {constants.No, false},
-		"1":             {constants.Yes, true},
-		"AR-0":          {constants.AreaUnder50, models.Range{Min: 0, Max: 50}},
-		"AR-50":         {constants.Area50To75, models.Range{Min: 50, Max: 75}},
-		"AR-75":         {constants.Area75To100, models.Range{Min: 75, Max: 100}},
-		"AR-100":        {constants.Area100To150, models.Range{Min: 100, Max: 150}},
-		"AR-150":        {constants.Area150To200, models.Range{Min: 150, Max: 200}},
-		"AR-200":        {constants.Area200To250, models.Range{Min: 200, Max: 250}},
-		"AR-250":        {constants.Area250To300, models.Range{Min: 250, Max: 300}},
-		"AR-300":        {constants.Area300To400, models.Range{Min: 300, Max: 400}},
-		"AR-400":        {constants.Area400To500, models.Range{Min: 400, Max: 500}},
-		"AR-500":        {constants.Area500To750, models.Range{Min: 500, Max: 700}},
-		"AR-750":        {constants.Area750To1000, models.Range{Min: 700, Max: 1_000}},
-		"AR-1000":       {constants.Area1000To1500, models.Range{Min: 1_000, Max: 1_500}},
-		"AR-1500":       {constants.Area1500To2000, models.Range{Min: 1_500, Max: 2_000}},
-		"AR-2000":       {constants.Area2000To3000, models.Range{Min: 2_000, Max: 3_000}},
-		"AR-3000":       {constants.Area3000To4000, models.Range{Min: 3_000, Max: 4_000}},
-		"AR-4000":       {constants.Area4000To5000, models.Range{Min: 4_000, Max: 5_000}},
-		"AR-5000":       {constants.Area5000To7500, models.Range{Min: 5_000, Max: 7_500}},
-		"AR-7500":       {constants.Area7500To10000, models.Range{Min: 7_5000, Max: 9_000}},
-		"AR-1000+":      {constants.AreaOver10000, models.Range{Min: 9_000, Max: 0}},
-		"NR-0":          {constants.Bedrooms0, models.Range{Min: 0, Max: 0}},
-		"NR-1":          {constants.Bedrooms1, models.Range{Min: 0, Max: 1}},
-		"NR-2":          {constants.Bedrooms2, models.Range{Min: 0, Max: 2}},
-		"NR-3":          {constants.Bedrooms3, models.Range{Min: 0, Max: 3}},
-		"NR-4":          {constants.Bedrooms4, models.Range{Min: 0, Max: 4}},
-		"NR-5":          {constants.Bedrooms5, models.Range{Min: 0, Max: 5}},
-		"NR-6":          {constants.Bedrooms6, models.Range{Min: 0, Max: 6}},
-		"NR-7":          {constants.Bedrooms7, models.Range{Min: 0, Max: 7}},
-		"NR-8":          {constants.Bedrooms8, models.Range{Min: 0, Max: 8}},
-		"NR-9":          {constants.Bedrooms9, models.Range{Min: 0, Max: 9}},
-		"NR-10":         {constants.Bedrooms10, models.Range{Min: 0, Max: 10}},
-		"NR-10+":        {constants.BedroomsOver10, models.Range{Min: 0, Max: 11}},
-		"PA-Apartment":  {constants.PropertyApartment, "Apartment"},
-		"PA-Villa":      {constants.PropertyVilla, "Villa"},
-		"PA-Commercial": {constants.PropertyCommercial, "Commercial"},
-		"PA-Office":     {constants.PropertyOffice, "Office"},
-		"PA-Land":       {constants.PropertyLand, "Land"},
-		"BA-New":        {constants.BuildingAgeNew, 0},
-		"BA-1Year":      {constants.BuildingAge1Year, 1},
-		"BA-2Years":     {constants.BuildingAge2Years, 2},
-		"BA-3Years":     {constants.BuildingAge3Years, 3},
-		"BA-4Years":     {constants.BuildingAge4Years, 4},
-		"BA-5Years":     {constants.BuildingAge5Years, 5},
-		"BA-6Years":     {constants.BuildingAge6Years, 6},
-		"BA-7Years":     {constants.BuildingAge7Years, 7},
-		"BA-8Years":     {constants.BuildingAge8Years, 8},
-		"BA-9Years":     {constants.BuildingAge9Years, 9},
-		"BA-10Years":    {constants.BuildingAge10Years, 10},
-		"BA-Over10":     {constants.BuildingAgeOver10, 11},
-		"FLR-0":         {constants.Floor0, models.Range{Min: 0, Max: 0}},
-		"FLR-1":         {constants.Floor1, models.Range{Min: 0, Max: 1}},
-		"FLR-2":         {constants.Floor2, models.Range{Min: 0, Max: 2}},
-		"FLR-3":         {constants.Floor3, models.Range{Min: 0, Max: 3}},
-		"FLR-4":         {constants.Floor4, models.Range{Min: 0, Max: 4}},
-		"FLR-5":         {constants.Floor5, models.Range{Min: 0, Max: 5}},
-		"FLR-6":         {constants.Floor6, models.Range{Min: 0, Max: 6}},
-		"FLR-7":         {constants.Floor7, models.Range{Min: 0, Max: 7}},
-		"FLR-8":         {constants.Floor8, models.Range{Min: 0, Max: 8}},
-		"FLR-9":         {constants.Floor9, models.Range{Min: 0, Max: 9}},
-		"FLR-10":        {constants.Floor10, models.Range{Min: 0, Max: 10}},
-		"FLR-10+":       {constants.FloorOver10, models.Range{Min: 0, Max: 11}},
-		"TM-Today":      {constants.TimeToday, time.Now()},
-		"TM-1DayAgo":    {constants.Time1DayAgo, time.Now()},
-		"TM-2DaysAgo":   {constants.Time2DaysAgo, time.Now()},
-		"TM-3DaysAgo":   {constants.Time3DaysAgo, time.Now()},
-		"TM-1WeekAgo":   {constants.Time1WeekAgo, time.Now()},
-		"TM-1MonthAgo":  {constants.Time1MonthAgo, time.Now()},
-		"TM-1YearAgo":   {constants.Time1YearAgo, time.Now()},
-		"Tehran":        {constants.Tehran, "Tehran"},
-		"Zanjan":        {constants.Zanjan, "Zanjan"},
-		"Khoram":        {constants.Khoram, "Khoram"},
-		"Mazandaran":    {constants.Mazandaran, "Mazandaran"},
+		"PR-0":         {constants.PriceUnder500M, "0,500"},
+		"PR-500":       {constants.Price500MTo700M, "500,700"},
+		"PR-700":       {constants.Price700MTo900M, "700,900"},
+		"PR-900":       {constants.Price900MTo1B, "900,1000"},
+		"PR-1000":      {constants.Price1BTo1_5B, "1000,1500"},
+		"PR-1500":      {constants.Price1_5BTo2B, "1500,2000"},
+		"PR-2000":      {constants.Price2BTo3B, "2000,3000"},
+		"PR-3000":      {constants.Price3BTo4B, "3000,4000"},
+		"PR-4000":      {constants.Price4BTo5B, "4000,5000"},
+		"PR-5000":      {constants.Price5BTo7B, "5000,7000"},
+		"PR-7000":      {constants.Price7BTo10B, "7000,10000"},
+		"PR-10000":     {constants.Price10BTo15B, "10000,15000"},
+		"PR-15000":     {constants.Price15BTo20B, "15000,20000"},
+		"PR-20000":     {constants.Price20BTo30B, "20000,30000"},
+		"PR-30000":     {constants.Price30BTo40B, "30000,40000"},
+		"PR-40000":     {constants.Price40BTo50B, "40000,50000"},
+		"PR-50000":     {constants.Price50BTo75B, "50000,70000"},
+		"PR-70000":     {constants.Price75BTo100B, "70000,100000"},
+		"PR-100000":    {constants.Price100BTo200B, "100000,200000"},
+		"PR-200000":    {constants.Price200BTo300B, "200000,300000"},
+		"PR-300000":    {constants.Price300BTo500B, "300000,500000"},
+		"PR-500000":    {constants.Price500BTo700B, "500000,700000"},
+		"PR-700000":    {constants.Price700BTo900B, "700000,900000"},
+		"PR-900000+":   {constants.PriceOver900B, "900000,0"},
+		"at-buy":       {constants.ForBuy, "false"},
+		"at-rent":      {constants.ForRent, "true"},
+		"No":           {constants.No, "false"},
+		"Yes":          {constants.Yes, "true"},
+		"AR-0":         {constants.AreaUnder50, "0,50"},
+		"AR-50":        {constants.Area50To75, "50,75"},
+		"AR-75":        {constants.Area75To100, "75,100"},
+		"AR-100":       {constants.Area100To150, "100,150"},
+		"AR-150":       {constants.Area150To200, "150,200"},
+		"AR-200":       {constants.Area200To250, "200,250"},
+		"AR-250":       {constants.Area250To300, "250,300"},
+		"AR-300":       {constants.Area300To400, "300,400"},
+		"AR-400":       {constants.Area400To500, "400,500"},
+		"AR-500":       {constants.Area500To750, "500,700"},
+		"AR-750":       {constants.Area750To1000, "700,1000"},
+		"AR-1000":      {constants.Area1000To1500, "1000,1500"},
+		"AR-1500":      {constants.Area1500To2000, "1500,2000"},
+		"AR-2000":      {constants.Area2000To3000, "2000,3000"},
+		"AR-3000":      {constants.Area3000To4000, "3000,4000"},
+		"AR-4000":      {constants.Area4000To5000, "4000,5000"},
+		"AR-5000":      {constants.Area5000To7500, "5000,7500"},
+		"AR-7500":      {constants.Area7500To10000, "75000,9000"},
+		"AR-1000+":     {constants.AreaOver10000, "9000,0"},
+		"NR-0":         {constants.Bedrooms0, "0,0"},
+		"NR-1":         {constants.Bedrooms1, "0,1"},
+		"NR-2":         {constants.Bedrooms2, "0,2"},
+		"NR-3":         {constants.Bedrooms3, "0,3"},
+		"NR-4":         {constants.Bedrooms4, "0,4"},
+		"NR-5":         {constants.Bedrooms5, "0,5"},
+		"NR-6":         {constants.Bedrooms6, "0,6"},
+		"NR-7":         {constants.Bedrooms7, "0,7"},
+		"NR-8":         {constants.Bedrooms8, "0,8"},
+		"NR-9":         {constants.Bedrooms9, "0,9"},
+		"NR-10":        {constants.Bedrooms10, "0,10"},
+		"NR-10+":       {constants.BedroomsOver10, "0,11"},
+		"PA-Apartment": {constants.PropertyApartment, "true"},
+		"PA-Villa":     {constants.PropertyVilla, "false"},
+		"BA-New":       {constants.BuildingAgeNew, "0,0"},
+		"BA-1Year":     {constants.BuildingAge1Year, "0,1"},
+		"BA-2Years":    {constants.BuildingAge2Years, "0,2"},
+		"BA-3Years":    {constants.BuildingAge3Years, "0,3"},
+		"BA-4Years":    {constants.BuildingAge4Years, "0,4"},
+		"BA-5Years":    {constants.BuildingAge5Years, "0,5"},
+		"BA-6Years":    {constants.BuildingAge6Years, "0,6"},
+		"BA-7Years":    {constants.BuildingAge7Years, "0,7"},
+		"BA-8Years":    {constants.BuildingAge8Years, "0,8"},
+		"BA-9Years":    {constants.BuildingAge9Years, "0,9"},
+		"BA-10Years":   {constants.BuildingAge10Years, "0,10"},
+		"BA-Over10":    {constants.BuildingAgeOver10, "0,11"},
+		"FLR-0":        {constants.Floor0, "0,0"},
+		"FLR-1":        {constants.Floor1, "0,1"},
+		"FLR-2":        {constants.Floor2, "0,2"},
+		"FLR-3":        {constants.Floor3, "0,3"},
+		"FLR-4":        {constants.Floor4, "0,4"},
+		"FLR-5":        {constants.Floor5, "0,5"},
+		"FLR-6":        {constants.Floor6, "0,6"},
+		"FLR-7":        {constants.Floor7, "0,7"},
+		"FLR-8":        {constants.Floor8, "0,8"},
+		"FLR-9":        {constants.Floor9, "0,9"},
+		"FLR-10":       {constants.Floor10, "0,10"},
+		"FLR-10+":      {constants.FloorOver10, "0,11"},
+		"Tehran":       {constants.Tehran, "Tehran"},
+		"Zanjan":       {constants.Zanjan, "Zanjan"},
+		"Khoram":       {constants.Khoram, "Khoram"},
+		"Mazandaran":   {constants.Mazandaran, "Mazandaran"},
 	}
 	return btnMap[value]
 }

@@ -35,13 +35,13 @@ func main() {
 	}
 	repo := database.NewRepository(dbService)
 
-	err = setAdminUserIds(repo)
+	err = setAdminTelegramIds(repo)
 	if err != nil {
 		fmt.Println("set admins had error:", err)
 		os.Exit(1)
 	}
 	// I commented on this part because it needs a VPN to run
-	bot, err := bot.NewBot(bot.BotConfig{
+	bot, err := bot.NewBot(repo, bot.BotConfig{
 		Token:  conf.BotToken,
 		Poller: 10 * time.Second,
 	})
@@ -53,13 +53,13 @@ func main() {
 	alerter.RunAdminNotifier()
 
 	initialCrawlers(conf, repo, alerter)
-	filterService := FilterServices.NewFilterServices(repo,bot)
+	filterService := FilterServices.NewFilterServices(repo, bot)
 	runFilterRunner(*filterService)
 
 	watchListService := watchList.New(repo, bot)
 	go watchListService.RunWatcher()
 
-	bot.StartBot(dbService.GetDb())
+	bot.StartBot(dbService)
 	// http.ListenAndServe(":"+config.Port, nil)
 }
 
@@ -89,7 +89,7 @@ func runIncrementalCrawl(c *config.Config, repo database.IRepository, alerter *a
 		for {
 			select {
 			case <-ticker.C:
-				err := setAdminUserIds(repo)
+				err := setAdminTelegramIds(repo)
 				if err != nil {
 					fmt.Println("set admins had error:", err)
 				}
@@ -113,14 +113,14 @@ func runFilterRunner(filterService FilterServices.FilterServices) {
 	}(filterService)
 }
 
-func setAdminUserIds(repo database.IRepository) error {
+func setAdminTelegramIds(repo database.IRepository) error {
 	users, err := repo.GetAdminUsers()
 	if err != nil {
 		return err
 	}
-	config.AdminUserIds = []int{}
+	config.AdminTelegramIds = []int{}
 	for _, v := range users {
-		config.AdminUserIds = append(config.AdminUserIds, int(v.ID))
+		config.AdminTelegramIds = append(config.AdminTelegramIds, int(v.TelegramID))
 	}
 	return nil
 }

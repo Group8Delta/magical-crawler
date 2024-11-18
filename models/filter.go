@@ -23,15 +23,10 @@ type Filter struct {
 	IsApartment           *bool
 	CreationTimeRangeFrom time.Time
 	CreationTimeRangeTo   time.Time
-	SearchedCount         uint
+	SearchedCount         int `gorm:"default:1"`
 }
 
 type Range struct {
 	Min int `json:"min,omitempty"`
 	Max int `json:"max,omitempty"`
 }
-
-// type TimeRange struct {
-// 	From time.Time `json:"from,omitempty"`
-// 	To   time.Time `json:"to,omitempty"`
-// }
