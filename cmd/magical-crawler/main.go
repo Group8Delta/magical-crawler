@@ -59,7 +59,7 @@ func main() {
 	watchListService := watchList.New(repo, bot)
 	go watchListService.RunWatcher()
 
-	bot.StartBot(dbService.GetDb())
+	bot.StartBot(dbService)
 	// http.ListenAndServe(":"+config.Port, nil)
 }
 

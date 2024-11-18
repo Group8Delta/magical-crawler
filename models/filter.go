@@ -24,7 +24,7 @@ type Filter struct {
 	IsApartment           *bool
 	CreationTimeRangeFrom time.Time
 	CreationTimeRangeTo   time.Time
-	SearchedCount         uint
+	SearchedCount         int `gorm:"default:1"`
 }
 
 type Range struct {

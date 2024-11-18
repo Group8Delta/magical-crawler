@@ -233,6 +233,20 @@ const (
 	CrawlerStatusList              = "لیست لاگ عملکرد کرالر "
 	AdminID                = "آیدی"
 	AdminName              = "اسم"
+
+// Popular items menue
+const (
+	PopularItemsButton         = "آیتم های پربازدید"
+	PopularAdsButton           = "آگهی های پربازدید"
+	PopularSingleFiltersButton = "فیلتر های پربازدید"
+	PopularFiltersButton       = "فیلتر های ترکیبی پربازدید"
+	PopularItemsActionMsg      = "یکی از گزینه ها رو انتخاب کن:"
+	NumberOfItemsQuestion      = "چندتا میخوای ببینی؟"
+	WrongNumberFormat          = "لطفا تعداد رو بدرستی وارد کن"
+	AdList                     = "لیست آگهی ها"
+	FilterList                 = "لیست فیلتر ها"
+	EmptyAdList                = "لیست آگهی ها خالی است"
+	EmptyFilterList            = "لیست فیلتر ها خالی است"
 )
 
 // ‌Bot Messages
