@@ -93,6 +93,8 @@ func (b *Bot) RegisterHandlers(db database.DbService) {
 	b.Bot.Handle(constants.PopularAdsButton, PopularAdsHandler(b, db))
 	b.Bot.Handle(constants.PopularSingleFiltersButton, PopularSingleFiltersHandler(b, db))
 	b.Bot.Handle(constants.PopularFiltersButton, PopularFiltersHandler(b, db))
+	b.Bot.Handle(constants.FiltersButton, WatchListHandler(b, db))
+
 }
 
 func (b *Bot) StartBot(db database.DbService) {

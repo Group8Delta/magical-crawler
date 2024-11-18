@@ -38,10 +38,23 @@ type IRepository interface {
 	GetMostVisitedAds(count int) ([]models.Ad, error)
 	GetMostSearchedFilters(count int) ([]models.Filter, error)
 	GetMostSearchedSingleFilters(count int) ([]Dtos.PopularFiltersDto, error)
+	GetWatchListFiltersByTelegramId(id int) ([]models.Filter, error)
+	GetUserByTelegramId(id int) (*models.User, error)
+	DeleteWatchListByFilterId(filterId int, userId int) error
 }
 
 type Repository struct {
 	db DbService
+}
+
+func (r *Repository) GetWatchListFiltersByTelegramId(id int) ([]models.Filter, error) {
+	filters := []models.Filter{}
+	res := r.db.GetDb().Raw("select f.* from users u inner join watch_lists wl on wl.user_id =u.id inner join filters f on f.id=wl.filter_id where wl.deleted_at is null and u.telegram_id =?", id).Scan(&filters)
+
+	if res.Error != nil {
+		return nil, res.Error
+	}
+	return filters, nil
 }
 
 func (r *Repository) CreateFilter(filter Dtos.FilterDto) models.Filter {
@@ -113,6 +126,12 @@ func (r *Repository) GetAdByLink(link string) (*models.Ad, error) {
 func (r *Repository) GetUserById(id int) (*models.User, error) {
 	user := models.User{}
 	res := r.db.GetDb().Where("id = ?", id).First(&user)
+	return &user, res.Error
+}
+
+func (r *Repository) GetUserByTelegramId(id int) (*models.User, error) {
+	user := models.User{}
+	res := r.db.GetDb().Where("telegram_id = ?", id).First(&user)
 	return &user, res.Error
 }
 
@@ -522,6 +541,18 @@ func (r *Repository) GetCurrentMinuteWatchLists() ([]models.WatchList, error) {
 func (r *Repository) DeleteWatchList(id int) error {
 	w := models.WatchList{}
 	res := r.db.GetDb().Where("id = ?", id).First(&w)
+	if res.Error != nil {
+		return res.Error
+	}
+	now := time.Now()
+	w.DeletedAt = &now
+
+	return r.db.GetDb().Save(&w).Error
+}
+
+func (r *Repository) DeleteWatchListByFilterId(filterId int, userId int) error {
+	w := models.WatchList{}
+	res := r.db.GetDb().Where("filter_id = ? and user_id = ? and deleted_at is null", filterId, userId).First(&w)
 	if res.Error != nil {
 		return res.Error
 	}
