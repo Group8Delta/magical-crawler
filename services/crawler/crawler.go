@@ -27,7 +27,7 @@ var CrawlerTypes []CrawlerType = []CrawlerType{
 
 type CrawlerInterface interface {
 	CrawlAdsLinks(ctx context.Context, searchUrl string) ([]string, int, error)
-	CrawlPageUrl(ctx context.Context, pageUrl string) (*Ad,int, error)
+	CrawlPageUrl(ctx context.Context, pageUrl string) (*Ad, int, error)
 	RunCrawler()
 }
 
@@ -55,7 +55,7 @@ func SaveAdData(repo database.IRepository, ad *Ad) error {
 		betrooms := int(ad.Bedrooms)
 		buildYear := int(ad.BuiltYear)
 		floor := int(ad.Floor)
-		nad := repo.CreateAd(Dtos.AdDto{Link: ad.Link, PhotoUrl: &ad.PhotoUrl, SellerContact: ad.SellerContact, Description: &ad.Description, Price: &price, RentPrice: &rprice, City: &ad.City, Neighborhood: &ad.Neighborhood, Size: &size, Bedrooms: &betrooms, HasElevator: &ad.HasElevator, HasStorage: &ad.HasStorage, BuiltYear: &buildYear, ForRent: ad.ForRent, IsApartment: ad.IsApartment, Floor: &floor, CreationTime: &ad.CreationTime})
+		nad := repo.CreateAd(Dtos.AdDto{Title: ad.Title, Link: ad.Link, PhotoUrl: &ad.PhotoUrl, SellerContact: ad.SellerContact, Description: &ad.Description, Price: &price, RentPrice: &rprice, City: &ad.City, Neighborhood: &ad.Neighborhood, Size: &size, Bedrooms: &betrooms, HasElevator: &ad.HasElevator, HasStorage: &ad.HasStorage, BuiltYear: &buildYear, ForRent: ad.ForRent, IsApartment: ad.IsApartment, Floor: &floor, CreationTime: &ad.CreationTime})
 		repo.CreatePriceHistory(Dtos.PriceHistoryDto{AdID: uint(nad.ID), Price: *nad.Price, RentPrice: nad.RentPrice, SubmittedAt: time.Now()})
 	} else {
 		price := int64(ad.Price)
@@ -64,7 +64,7 @@ func SaveAdData(repo database.IRepository, ad *Ad) error {
 		betrooms := int(ad.Bedrooms)
 		buildYear := int(ad.BuiltYear)
 		floor := int(ad.Floor)
-		nad, err := repo.UpdateAd(Dtos.AdDto{ID: a.ID, Link: ad.Link, PhotoUrl: &ad.PhotoUrl, SellerContact: ad.SellerContact, Description: &ad.Description, Price: &price, RentPrice: &rprice, City: &ad.City, Neighborhood: &ad.Neighborhood, Size: &size, Bedrooms: &betrooms, HasElevator: &ad.HasElevator, HasStorage: &ad.HasStorage, BuiltYear: &buildYear, ForRent: ad.ForRent, IsApartment: ad.IsApartment, Floor: &floor, CreationTime: &ad.CreationTime})
+		nad, err := repo.UpdateAd(Dtos.AdDto{Title: ad.Title, ID: a.ID, Link: ad.Link, PhotoUrl: &ad.PhotoUrl, SellerContact: ad.SellerContact, Description: &ad.Description, Price: &price, RentPrice: &rprice, City: &ad.City, Neighborhood: &ad.Neighborhood, Size: &size, Bedrooms: &betrooms, HasElevator: &ad.HasElevator, HasStorage: &ad.HasStorage, BuiltYear: &buildYear, ForRent: ad.ForRent, IsApartment: ad.IsApartment, Floor: &floor, CreationTime: &ad.CreationTime})
 		if err != nil {
 			return err
 		}
@@ -74,5 +74,3 @@ func SaveAdData(repo database.IRepository, ad *Ad) error {
 	}
 	return nil
 }
-
-

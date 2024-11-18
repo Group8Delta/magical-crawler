@@ -16,7 +16,7 @@ import (
 var once sync.Once
 var config *Config
 
-var AdminUserIds = []int{}
+var AdminTelegramIds = []int{}
 
 type Config struct {
 	DatabaseHost            string        `mapstructure:"DATABASE_HOST"`

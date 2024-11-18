@@ -10,4 +10,5 @@ type CrawlerFunctionality struct {
 	RAMUsage           int
 	TotalRequests      int
 	SuccessfulRequests int
+	FailedRequests int
 }
