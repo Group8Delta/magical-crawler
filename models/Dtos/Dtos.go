@@ -88,4 +88,17 @@ type AdSummary struct {
 	PhotoUrl    *string
 	Description *string
 	Price       *int64
+type AccessDto struct {
+	OwnerID       uint
+	AccessedByID  uint
+	AccessLevelID uint
+}
+type BookmarkDto struct {
+	AdID     uint
+	UserID   uint
+	IsPublic bool
+}
+type BookmarkToShowDto struct {
+	Ad       models.Ad
+	IsPublic bool
 }
