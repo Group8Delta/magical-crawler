@@ -44,12 +44,23 @@ func (b *Bot) Notify(recipientIdentifier string, m *notification.Message) error 
 	}
 	recipient := telebot.ChatID(teleUserId)
 	message := fmt.Sprintf("%s \n\n %s", m.Title, m.Content)
-	_, err = b.Bot.Send(recipient, message)
-	if err != nil {
-		return err
+	if m.Photo == "" {
+		_, err = b.Bot.Send(recipient, message)
+		if err != nil {
+			return err
+		}
+		return nil
+	} else {
+		photo := &telebot.Photo{
+			File: telebot.FromURL(m.Photo),
+		}
+		_, err := b.Bot.SendAlbum(recipient, telebot.Album{photo})
+		if err != nil {
+			return err
+		}
+		return nil
 	}
 
-	return nil
 }
 func (b *Bot) RegisterHandlers(db *gorm.DB) {
 	b.Bot.Handle("/menu", func(ctx telebot.Context) error {
