@@ -7,6 +7,7 @@ import (
 	"magical-crwler/database"
 	"magical-crwler/models"
 	"magical-crwler/models/Dtos"
+	"magical-crwler/utils"
 	"strconv"
 	"strings"
 	"time"
@@ -60,7 +61,7 @@ func (f *Filters) startSearch(repo database.IRepository) ([]models.Ad, error) {
 }
 func (f *Filters) removeAllValue() {
 	f.adType.value = ""
-	f.adType.data.ForRent = *new(bool)
+	f.adType.data.ForRent = false
 	f.price.value = ""
 	f.price.data.PriceRange = nil
 	f.area.value = ""
@@ -68,21 +69,21 @@ func (f *Filters) removeAllValue() {
 	f.rooms.value = ""
 	f.rooms.data.BedroomRange = nil
 	f.propertyType.value = ""
-	f.propertyType.data.IsApartment = new(bool)
+	f.propertyType.data.IsApartment = nil
 	f.buildingAge.value = ""
 	f.buildingAge.data.AgeRange = nil
 	f.floor.value = ""
 	f.floor.data.FloorRange = nil
 	f.storage.value = ""
-	f.storage.data.HasStorage = new(bool)
+	f.storage.data.HasStorage = nil
 	f.elevator.value = ""
-	f.elevator.data.HasElevator = new(bool)
+	f.elevator.data.HasElevator = nil
 	f.adDate.value = ""
-	f.adDate.data.CreationTimeRangeTo = time.Now()
-	f.adDate.data.CreationTimeRangeFrom = time.Now()
+	f.adDate.data.CreationTimeRangeTo = time.Time{}
+	f.adDate.data.CreationTimeRangeFrom = time.Time{}
 	f.location.value = ""
-	f.location.data.City = new(string)
-	f.location.data.Neighborhood = new(string)
+	f.location.data.City = nil
+	f.location.data.Neighborhood = nil
 }
 
 func (f *Filters) message() string {
@@ -495,8 +496,7 @@ func SearchHandlers(b *Bot, db *gorm.DB) func(ctx telebot.Context) error {
 				return ctx.Send(err)
 			}
 			for _, ad := range ads {
-				log.Println(ad)
-				ctx.Send(ad)
+				ctx.Send(utils.GenerateFilterMessage(ad), telebot.ModeHTML)
 			}
 			return ctx.Send(constants.SearchMsg)
 		case "Remove":
