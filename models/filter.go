@@ -1,7 +1,6 @@
 package models
 
 import (
-	"log"
 	"time"
 
 	"gorm.io/gorm"
@@ -30,13 +29,4 @@ type Filter struct {
 type Range struct {
 	Min int `json:"min,omitempty"`
 	Max int `json:"max,omitempty"`
-}
-
-func CreateNewFilter(db *gorm.DB, filters *Filter) error {
-	result := db.Create(filters)
-	if result.Error != nil {
-		return result.Error
-	}
-	log.Printf("| Added new filter to database, Id: %d |", filters.ID)
-	return nil
 }

@@ -2,7 +2,9 @@ package bot
 
 import (
 	"fmt"
+	"log"
 	"magical-crwler/constants"
+	"magical-crwler/database"
 	"magical-crwler/models"
 	"magical-crwler/models/Dtos"
 	"strconv"
@@ -33,8 +35,8 @@ type FilterValue struct {
 	subButton []telebot.Btn
 }
 
-func (f *Filters) startSearch(db *gorm.DB) ([]models.Ad, error) {
-	filters := models.Filter{
+func (f *Filters) startSearch(repo database.IRepository) ([]models.Ad, error) {
+	filters := Dtos.FilterDto{
 		PriceRange:            f.price.data.PriceRange,
 		RentPriceRange:        f.price.data.RentPriceRange,
 		ForRent:               f.adType.data.ForRent,
@@ -49,11 +51,12 @@ func (f *Filters) startSearch(db *gorm.DB) ([]models.Ad, error) {
 		CreationTimeRangeFrom: f.adDate.data.CreationTimeRangeFrom,
 		CreationTimeRangeTo:   time.Now(),
 	}
-	err := models.CreateNewFilter(db, &filters)
+	filterModel := repo.CreateFilter(filters)
+	ads, err := repo.GetAdsByFilterId(int(filterModel.ID))
 	if err != nil {
 		return nil, err
 	}
-	return nil, nil
+	return ads, nil
 }
 func (f *Filters) removeAllValue() {
 	f.adType.value = ""
@@ -486,11 +489,13 @@ func SearchHandlers(b *Bot, db *gorm.DB) func(ctx telebot.Context) error {
 			return ctx.EditOrSend(filters.message(), selector["location"])
 		case "Search":
 			ctx.Send(constants.Loading)
-			ads, err := filters.startSearch(db)
+			ads, err := filters.startSearch(b.repo)
 			if err != nil {
+				log.Println(err)
 				return ctx.Send(err)
 			}
 			for _, ad := range ads {
+				log.Println(ad)
 				ctx.Send(ad)
 			}
 			return ctx.Send(constants.SearchMsg)
