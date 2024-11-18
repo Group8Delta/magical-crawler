@@ -1,78 +1,77 @@
 package bot
 
-import (
-	"log"
-	"magical-crwler/constants"
-	"os"
+// import (
+// 	"log"
+// 	"magical-crwler/constants"
+// 	"os"
 
-	"gopkg.in/telebot.v4"
-)
+// 	"gopkg.in/telebot.v4"
+// )
 
-func ExportHandler(b *Bot) func(c telebot.Context) error {
-	return func(c telebot.Context) error {
-		exportMenu := &telebot.ReplyMarkup{}
+// func ExportHandler(b *Bot) func(c telebot.Context) error {
+// 	return func(c telebot.Context) error {
+// 		exportMenu := &telebot.ReplyMarkup{}
 
-		xlsxBtn := exportMenu.Data(constants.ExportXLSX, "export_xlsx")
-		csvBtn := exportMenu.Data(constants.ExportCSV, "export_csv")
+// 		xlsxBtn := exportMenu.Data(constants.ExportXLSX, "export_xlsx")
+// 		csvBtn := exportMenu.Data(constants.ExportCSV, "export_csv")
 
-		exportMenu.Inline(
-			exportMenu.Row(xlsxBtn, csvBtn),
-		)
+// 		exportMenu.Inline(
+// 			exportMenu.Row(xlsxBtn, csvBtn),
+// 		)
 
-		return c.EditOrSend(constants.ExportBtnInfo, exportMenu)
-	}
-}
+// 		return c.EditOrSend(constants.ExportBtnInfo, exportMenu)
+// 	}
+// }
 
-func export_xlsx_Handler(b *Bot) func(c telebot.Context) error {
-	return func(c telebot.Context) error {
-		data := retrieveData()
-		filename := "exported_data.xlsx"
-		zipFilename := "exported_data.zip"
+// func export_xlsx_Handler(b *Bot) func(c telebot.Context) error {
+// 	return func(c telebot.Context) error {
+// 		filename := "exported_data.xlsx"
+// 		zipFilename := "exported_data.zip"
 
-		if err := ExportToXLSX(filename, data); err != nil {
-			log.Printf("Error exporting XLSX: %v", err)
-			return err
-		}
+// 		if err := ExportToXLSX(filename); err != nil {
+// 			log.Printf("Error exporting XLSX: %v", err)
+// 			return err
+// 		}
 
-		if err := CreateZipFile(zipFilename, filename); err != nil {
-			log.Printf("Error creating zip file: %v", err)
-			return err
-		}
+// 		if err := CreateZipFile(zipFilename, filename); err != nil {
+// 			log.Printf("Error creating zip file: %v", err)
+// 			return err
+// 		}
 
-		zipFile := &telebot.Document{File: telebot.FromDisk(zipFilename), FileName: zipFilename}
-		if err := c.Send(zipFile); err != nil {
-			return err
-		}
+// 		zipFile := &telebot.Document{File: telebot.FromDisk(zipFilename), FileName: zipFilename}
+// 		if err := c.Send(zipFile); err != nil {
+// 			return err
+// 		}
 
-		os.Remove(filename)
-		os.Remove(zipFilename)
-		return nil
-	}
-}
+// 		defer os.Remove(filename)
+// 		defer os.Remove(zipFilename)
+// 		return nil
+// 	}
+// }
 
-func export_csv_Handler(b *Bot) func(c telebot.Context) error {
-	return func(c telebot.Context) error {
-		data := retrieveData()
-		filename := "exported_data.csv"
-		zipFilename := "exported_data.zip"
+// func export_csv_Handler(b *Bot) func(c telebot.Context) error {
+// 	return func(c telebot.Context) error {
 
-		if err := ExportToCSV(filename, data); err != nil {
-			log.Printf("Error exporting CSV: %v", err)
-			return err
-		}
+// 		filename := "exported_data.csv"
+// 		zipFilename := "exported_data.zip"
 
-		if err := CreateZipFile(zipFilename, filename); err != nil {
-			log.Printf("Error creating zip file: %v", err)
-			return err
-		}
+// 		if err := ExportToCSV(filename); err != nil {
+// 			log.Printf("Error exporting CSV: %v", err)
+// 			return err
+// 		}
 
-		zipFile := &telebot.Document{File: telebot.FromDisk(zipFilename), FileName: zipFilename}
-		if err := c.Send(zipFile); err != nil {
-			return err
-		}
+// 		if err := CreateZipFile(zipFilename, filename); err != nil {
+// 			log.Printf("Error creating zip file: %v", err)
+// 			return err
+// 		}
 
-		os.Remove(filename)
-		os.Remove(zipFilename)
-		return nil
-	}
-}
+// 		zipFile := &telebot.Document{File: telebot.FromDisk(zipFilename), FileName: zipFilename}
+// 		if err := c.Send(zipFile); err != nil {
+// 			return err
+// 		}
+
+// 		defer os.Remove(filename)
+// 		defer os.Remove(zipFilename)
+// 		return nil
+// 	}
+// }
