@@ -83,6 +83,7 @@ func (b *Bot) RegisterHandlers(db *gorm.DB) {
 	b.Bot.Handle(constants.AddAdminButton, AddAdminHandler(b, db))
 	b.Bot.Handle(constants.RemoveAdminButton, RemoveAdminHandler(b, db))
 	b.Bot.Handle(constants.ListAdminsButton, AdminListHandler(b, db))
+	b.Bot.Handle(constants.CrawlerStatusButton, CrawlerStatusLogs(b, db))
 }
 
 func (b *Bot) StartBot(db *gorm.DB) {
