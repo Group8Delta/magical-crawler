@@ -41,7 +41,7 @@ func main() {
 		os.Exit(1)
 	}
 	// I commented on this part because it needs a VPN to run
-	bot, err := bot.NewBot(bot.BotConfig{
+	bot, err := bot.NewBot(repo, bot.BotConfig{
 		Token:  conf.BotToken,
 		Poller: 10 * time.Second,
 	})

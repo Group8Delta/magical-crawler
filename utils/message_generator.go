@@ -28,9 +28,9 @@ func GenerateFilterMessage(ad models.Ad) string {
 	}
 	if ad.HasElevator != nil {
 		if *ad.HasElevator {
-			builder.WriteString(fmt.Sprintf("<b>آسانسور:</b> %t\n", "دارد"))
+			builder.WriteString(fmt.Sprintf("<b>آسانسور:</b> %s\n", "دارد"))
 		} else {
-			builder.WriteString(fmt.Sprintf("<b>آسانسور:</b> %t\n", "ندارد"))
+			builder.WriteString(fmt.Sprintf("<b>آسانسور:</b> %s\n", "ندارد"))
 		}
 	}
 	if ad.BuiltYear != nil {

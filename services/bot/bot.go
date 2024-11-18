@@ -16,13 +16,14 @@ import (
 type Bot struct {
 	Bot    *telebot.Bot
 	Config BotConfig
+	repo   database.IRepository
 }
 type BotConfig struct {
 	Token  string
 	Poller time.Duration
 }
 
-func NewBot(config BotConfig) (*Bot, error) {
+func NewBot(repo database.IRepository, config BotConfig) (*Bot, error) {
 	bot, err := telebot.NewBot(telebot.Settings{
 		Token:  config.Token,
 		Poller: &telebot.LongPoller{Timeout: config.Poller},
@@ -33,6 +34,7 @@ func NewBot(config BotConfig) (*Bot, error) {
 	return &Bot{
 		Bot:    bot,
 		Config: config,
+		repo:   repo,
 	}, nil
 }
 
