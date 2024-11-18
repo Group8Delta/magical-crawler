@@ -12,13 +12,45 @@ import (
 	"github.com/xuri/excelize/v2"
 )
 
+func ExportFileBot(ads []models.Ad, format string) error {
+	data := retrieveData(ads)
+
+	var outputFile, zipFile string
+	if format == "csv" {
+		outputFile = "ads_export.csv"
+	} else if format == "xlsx" {
+		outputFile = "ads_export.xlsx"
+	} else {
+		return fmt.Errorf("unsupported format: %s", format)
+	}
+	zipFile = "ads_export.zip"
+
+	var err error
+	if format == "csv" {
+		err = ExportToCSV(outputFile, data)
+	} else if format == "xlsx" {
+		err = ExportToXLSX(outputFile, data)
+	}
+	if err != nil {
+		return fmt.Errorf("failed to export file: %w", err)
+	}
+	defer os.Remove(outputFile)
+
+	err = CreateZipFile(zipFile, outputFile)
+	if err != nil {
+		return fmt.Errorf("failed to compress file: %w", err)
+	}
+	defer os.Remove(zipFile)
+
+	fmt.Println("Exported file successfully:", zipFile)
+	return nil
+}
+
 func retrieveData(ads []models.Ad) [][]string {
-	// Define the header row
 	data := [][]string{
 		{"ID", "Description", "Price", "Rent Price", "City", "Neighborhood", "Size", "Bedrooms", "Has Elevator", "For Rent", "Is Apartment", "Creation Time", "Visit Count"},
 	}
 
-	// Loop through the ads and populate the rows
 	for _, ad := range ads {
 		data = append(data, []string{
 			fmt.Sprintf("%d", ad.ID),                      // ID
