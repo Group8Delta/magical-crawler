@@ -152,18 +152,18 @@ func (wp *WorkerPoll) GetCrawlerFunctionalityReport() (models.CrawlerFunctionali
 	totalRamUsage := 0
 	totalCpuUsage := 0
 
-	for index:= range wp.results{
-		result:=wp.results[index]
-		totalTimeSpent+=int(result.TimeSpent.Seconds())
-		totalCpuUsage+=result.CPUUsage
-		totalRamUsage+=result.RAMUsage
+	for index := range wp.results {
+		result := wp.results[index]
+		totalTimeSpent += int(result.TimeSpent.Seconds())
+		totalCpuUsage += result.CPUUsage
+		totalRamUsage += result.RAMUsage
 	}
 
-	for index:= range wp.errors{
-		err:=wp.results[index]
-		totalTimeSpent+=int(err.TimeSpent.Seconds())
-		totalCpuUsage+=err.CPUUsage
-		totalRamUsage+=err.RAMUsage
+	for index := range wp.errors {
+		err := wp.errors[index]
+		totalTimeSpent += int(err.TimeSpent.Seconds())
+		totalCpuUsage += err.CPUUsage
+		totalRamUsage += err.RAMUsage
 	}
 
 	cf := models.CrawlerFunctionality{

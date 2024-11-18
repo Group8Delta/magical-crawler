@@ -26,6 +26,7 @@ type FilterDto struct {
 
 type AdDto struct {
 	ID            uint
+	Title         string
 	Link          string
 	PhotoUrl      *string
 	SellerName    string
