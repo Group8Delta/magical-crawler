@@ -173,6 +173,7 @@ func (wp *WorkerPoll) GetCrawlerFunctionalityReport() (models.CrawlerFunctionali
 		RAMUsage:           totalRamUsage,
 		TotalRequests:      int(wp.requestCount.Load()),
 		SuccessfulRequests: len(wp.results),
+		FailedRequests:     len(wp.errors),
 	}
 	return cf, nil
 }
