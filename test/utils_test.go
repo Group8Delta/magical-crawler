@@ -10,7 +10,7 @@ import (
 )
 
 func TestMessageGenerator(t *testing.T) {
-	ad := []models.Ad{models.Ad{}}
+	ad := models.Ad{}
 	result := utils.GenerateFilterMessage(ad)
 	fmt.Println(result)
 	assert.NotEmpty(t, result)
