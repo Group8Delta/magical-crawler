@@ -4,6 +4,7 @@ import "time"
 
 type Ad struct {
 	ID            uint
+	Title         string
 	Link          string
 	PhotoUrl      *string
 	SellerName    string

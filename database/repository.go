@@ -112,6 +112,7 @@ func (r *Repository) GetUserById(id int) (*models.User, error) {
 
 func (r *Repository) CreateAd(ad Dtos.AdDto) *models.Ad {
 	adm := models.Ad{
+		Title:         ad.Title,
 		Link:          ad.Link,
 		PhotoUrl:      ad.PhotoUrl,
 		SellerName:    ad.SellerName,
@@ -143,6 +144,7 @@ func (r *Repository) UpdateAd(ad Dtos.AdDto) (*models.Ad, error) {
 		return &a, res.Error
 	}
 
+	a.Title = ad.Title
 	a.Link = ad.Link
 	a.PhotoUrl = ad.PhotoUrl
 	a.SellerName = ad.SellerName

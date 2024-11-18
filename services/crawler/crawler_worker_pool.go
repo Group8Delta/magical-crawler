@@ -160,7 +160,7 @@ func (wp *WorkerPoll) GetCrawlerFunctionalityReport() (models.CrawlerFunctionali
 	}
 
 	for index := range wp.errors {
-		err := wp.results[index]
+		err := wp.errors[index]
 		totalTimeSpent += int(err.TimeSpent.Seconds())
 		totalCpuUsage += err.CPUUsage
 		totalRamUsage += err.RAMUsage
