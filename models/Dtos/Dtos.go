@@ -22,6 +22,7 @@ type FilterDto struct {
 	IsApartment           *bool
 	CreationTimeRangeFrom time.Time
 	CreationTimeRangeTo   time.Time
+	SearchedCount         int
 }
 
 type AdDto struct {
@@ -45,6 +46,7 @@ type AdDto struct {
 	IsApartment   bool
 	Floor         *int
 	CreationTime  *time.Time
+	VisitCount    int
 }
 
 type PriceHistoryDto struct {
@@ -59,4 +61,10 @@ type WatchListDto struct {
 	UserId      int
 	FilterId    int
 	UpdateCycle int
+}
+
+type PopularFiltersDto struct {
+	FilterName string
+	Value      string
+	Count      int
 }
