@@ -233,6 +233,7 @@ const (
 	CrawlerStatusList              = "لیست لاگ عملکرد کرالر "
 	AdminID                = "آیدی"
 	AdminName              = "اسم"
+)
 
 // Popular items menue
 const (
