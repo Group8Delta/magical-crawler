@@ -1,8 +1,10 @@
 package database
 
 import (
+	"fmt"
 	"magical-crwler/models"
 	"magical-crwler/models/Dtos"
+	"sort"
 	"time"
 )
 
@@ -33,6 +35,9 @@ type IRepository interface {
 	CreateWatchList(wl Dtos.WatchListDto) (*models.WatchList, error)
 	GetUserById(id int) (*models.User, error)
 	SaveCrawlerFunctionality(cf models.CrawlerFunctionality) error
+	GetMostVisitedAds(count int) ([]models.Ad, error)
+	GetMostSearchedFilters(count int) ([]models.Filter, error)
+	GetMostSearchedSingleFilters(count int) ([]Dtos.PopularFiltersDto, error)
 }
 
 type Repository struct {
@@ -56,6 +61,7 @@ func (r *Repository) CreateFilter(filter Dtos.FilterDto) models.Filter {
 		IsApartment:           filter.IsApartment,
 		CreationTimeRangeFrom: filter.CreationTimeRangeFrom,
 		CreationTimeRangeTo:   filter.CreationTimeRangeTo,
+		SearchedCount:         filter.SearchedCount,
 	}
 
 	r.db.GetDb().Create(&cf)
@@ -131,6 +137,7 @@ func (r *Repository) CreateAd(ad Dtos.AdDto) *models.Ad {
 		IsApartment:   ad.IsApartment,
 		Floor:         ad.Floor,
 		CreationTime:  ad.CreationTime,
+		VisitCount:    ad.VisitCount,
 	}
 
 	r.db.GetDb().Create(&adm)
@@ -210,6 +217,141 @@ func (r *Repository) GetAdsByFilterId(filterId int) ([]models.Ad, error) {
 //	r.db.GetDb().Where("name = ?", name).First(&models.LogLevel{})
 //}
 
+func (r *Repository) GetMostVisitedAds(count int) ([]models.Ad, error) {
+	var ads []models.Ad
+	err := r.db.GetDb().Order("visit_count DESC").Limit(count).Find(&ads).Error
+	if err != nil {
+		return nil, err
+	}
+	return ads, nil
+}
+
+func (r *Repository) GetMostSearchedFilters(count int) ([]models.Filter, error) {
+	var filters []models.Filter
+	err := r.db.GetDb().Order("searched_count DESC").Limit(count).Find(&filters).Error
+	if err != nil {
+		return nil, err
+	}
+	return filters, nil
+}
+
+func (r *Repository) GetMostSearchedSingleFilters(count int) ([]Dtos.PopularFiltersDto, error) {
+	var results []Dtos.PopularFiltersDto
+
+	queryAndAppend := func(field string, filterName string, whereClause string) error {
+		var tempResults []struct {
+			Value string
+			Count int
+		}
+
+		err := r.db.GetDb().
+			Model(&models.Filter{}).
+			Select(fmt.Sprintf("%s AS value, SUM(searched_count) AS count", field)).
+			Where(whereClause).
+			Group(field).
+			Order("count DESC").
+			Limit(count).
+			Scan(&tempResults).Error
+		if err != nil {
+			return err
+		}
+
+		for _, temp := range tempResults {
+			results = append(results, Dtos.PopularFiltersDto{
+				FilterName: filterName,
+				Value:      temp.Value,
+				Count:      temp.Count,
+			})
+		}
+		return nil
+	}
+
+	err := queryAndAppend("CONCAT(price_min, '-', price_max)", "PriceRange",
+		"price_min IS NOT NULL AND price_max IS NOT NULL")
+	if err != nil {
+		return nil, err
+	}
+
+	err = queryAndAppend("CONCAT(rent_price_min, '-', rent_price_max)", "RentPriceRange",
+		"rent_price_min IS NOT NULL AND rent_price_max IS NOT NULL")
+	if err != nil {
+		return nil, err
+	}
+
+	err = queryAndAppend("CASE for_rent WHEN true THEN 'Yes' ELSE 'No' END", "ForRent",
+		"for_rent IS NOT NULL")
+	if err != nil {
+		return nil, err
+	}
+
+	err = queryAndAppend("city", "City", "city IS NOT NULL")
+	if err != nil {
+		return nil, err
+	}
+
+	err = queryAndAppend("neighborhood", "Neighborhood", "neighborhood IS NOT NULL")
+	if err != nil {
+		return nil, err
+	}
+
+	err = queryAndAppend("CONCAT(size_min, '-', size_max)", "SizeRange",
+		"size_min IS NOT NULL AND size_max IS NOT NULL")
+	if err != nil {
+		return nil, err
+	}
+
+	err = queryAndAppend("CONCAT(bedroom_min, '-', bedroom_max)", "BedroomRange",
+		"bedroom_min IS NOT NULL AND bedroom_max IS NOT NULL")
+	if err != nil {
+		return nil, err
+	}
+
+	err = queryAndAppend("CONCAT(floor_min, '-', floor_max)", "FloorRange",
+		"floor_min IS NOT NULL AND floor_max IS NOT NULL")
+	if err != nil {
+		return nil, err
+	}
+
+	err = queryAndAppend("CASE has_elevator WHEN true THEN 'Yes' ELSE 'No' END", "HasElevator",
+		"has_elevator IS NOT NULL")
+	if err != nil {
+		return nil, err
+	}
+
+	err = queryAndAppend("CASE has_storage WHEN true THEN 'Yes' ELSE 'No' END", "HasStorage",
+		"has_storage IS NOT NULL")
+	if err != nil {
+		return nil, err
+	}
+
+	err = queryAndAppend("CONCAT(age_min, '-', age_max)", "AgeRange",
+		"age_min IS NOT NULL AND age_max IS NOT NULL")
+	if err != nil {
+		return nil, err
+	}
+
+	err = queryAndAppend("CASE is_apartment WHEN true THEN 'Yes' ELSE 'No' END", "IsApartment",
+		"is_apartment IS NOT NULL")
+	if err != nil {
+		return nil, err
+	}
+
+	err = queryAndAppend("CONCAT(creation_time_range_from, '-', creation_time_range_to)", "CreationTimeRange",
+		"creation_time_range_from IS NOT NULL AND creation_time_range_to IS NOT NULL")
+	if err != nil {
+		return nil, err
+	}
+
+	sort.Slice(results, func(i, j int) bool {
+		return results[i].Count > results[j].Count
+	})
+
+	if len(results) > count {
+		results = results[:count]
+	}
+
+	return results, nil
+}
 func NewRepository(db DbService) *Repository {
 	return &Repository{db: db}
 }
