@@ -4,7 +4,7 @@ package constants
 const (
 	MainMenu                = "منوی اصلی"
 	SearchButton            = "جستجو"
-	FiltersButton           = "فیلتر ها"
+	FiltersButton           = "فیلتر های منتخب"
 	FavoritesButton         = "لیست علاقه‌مندی ها"
 	ExportButton            = "خروجی فایل"
 	AccountManagementButton = "مدیریت حساب"
@@ -49,6 +49,7 @@ const (
 	ForBuy              = "برای خرید"
 	GoButton            = "بزن بریم"
 	RemoveButton        = "بیخیال"
+	WatchListButton     = "افزودن فیلتر به فیلتر های منتخب"
 )
 
 // Time Period Buttons
