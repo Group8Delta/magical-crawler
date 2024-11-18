@@ -506,6 +506,7 @@ func SearchHandlers(b *Bot) func(ctx telebot.Context) error {
 					ctx.Send(utils.GenerateFilterMessage(ad), telebot.ModeHTML)
 				}
 			}
+			ExportFileBot(ads, "csv", ctx)
 			filters.removeAllValue()
 			return ctx.Send(constants.SearchMsg)
 		case "Remove":

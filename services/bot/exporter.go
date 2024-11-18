@@ -10,9 +10,10 @@ import (
 	"path/filepath"
 
 	"github.com/xuri/excelize/v2"
+	"gopkg.in/telebot.v4"
 )
 
-func ExportFileBot(ads []models.Ad, format string) error {
+func ExportFileBot(ads []models.Ad, format string, ctx telebot.Context) error {
 	data := retrieveData(ads)
 
 	var outputFile, zipFile string
@@ -43,7 +44,8 @@ func ExportFileBot(ads []models.Ad, format string) error {
 	defer os.Remove(zipFile)
 
 	fmt.Println("Exported file successfully:", zipFile)
-	return nil
+	doc := &telebot.Document{File: telebot.FromDisk(zipFile), FileName: zipFile}
+	return ctx.Send(doc)
 }
 
 func retrieveData(ads []models.Ad) [][]string {
