@@ -23,9 +23,8 @@ func ExportHandler(b *Bot) func(c telebot.Context) error {
 	}
 }
 
-func export_xlsx_Handler(b *Bot) func(c telebot.Context) error {
+func export_xlsx_Handler(b *Bot, data [][]string) func(c telebot.Context) error {
 	return func(c telebot.Context) error {
-		data := retrieveData()
 		filename := "exported_data.xlsx"
 		zipFilename := "exported_data.zip"
 
@@ -50,9 +49,9 @@ func export_xlsx_Handler(b *Bot) func(c telebot.Context) error {
 	}
 }
 
-func export_csv_Handler(b *Bot) func(c telebot.Context) error {
+func export_csv_Handler(b *Bot, data [][]string) func(c telebot.Context) error {
 	return func(c telebot.Context) error {
-		data := retrieveData()
+
 		filename := "exported_data.csv"
 		zipFilename := "exported_data.zip"
 
