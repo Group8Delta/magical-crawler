@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"gopkg.in/telebot.v4"
-	"gorm.io/gorm"
 )
 
 type Filters struct {
@@ -107,7 +106,7 @@ func newReplyMarkup() *telebot.ReplyMarkup {
 	return &telebot.ReplyMarkup{RemoveKeyboard: true, ResizeKeyboard: true}
 }
 
-func SearchHandlers(b *Bot, db *gorm.DB) func(ctx telebot.Context) error {
+func SearchHandlers(b *Bot) func(ctx telebot.Context) error {
 
 	var (
 		selector = map[string]*telebot.ReplyMarkup{
