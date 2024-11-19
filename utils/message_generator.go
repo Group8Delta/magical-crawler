@@ -46,13 +46,21 @@ func GenerateFilterMessage(ad models.Ad) string {
 }
 
 func GenerateCrawlerLog(logs []models.CrawlerFunctionality) string {
-
 	var builder strings.Builder
 	builder.WriteString(fmt.Sprintf("%s:\n", constants.CrawlerStatusList))
-	builder.WriteString("num date\t\t\tduration(s)\tcpu\tram(M)\tnumer of request\tsuccessful crawl\tfailed crawl\n")
 	for index, log := range logs {
 		formattedDate := log.Date.Format("2006-01-02 15:04:05") // Format the date
-		builder.WriteString(fmt.Sprintf("%d.  %s\t\t%d\t\t%d\t%d\t%d\t\t\t%d\t\t\t%d\n", index+1, formattedDate, log.Duration, log.CPUUsage, log.RAMUsage, log.TotalRequests, log.SuccessfulRequests, log.FailedRequests))
+		builder.WriteString(fmt.Sprintf(
+			"num: %d\n"+
+				"date: %s\n"+
+				"duration(s): %d\n"+
+				"CPU: %d\n"+
+				"RAM(M): %d\n"+
+				"number of request: %d\n"+
+				"successful crawl: %d\n"+
+				"failed crawl: %d\n\n",
+			index+1, formattedDate, log.Duration, log.CPUUsage, log.RAMUsage, log.TotalRequests, log.SuccessfulRequests, log.FailedRequests))
 	}
 	return builder.String()
 }
+
