@@ -510,11 +510,16 @@ func SearchHandlers(b *Bot) func(ctx telebot.Context) error {
 				ctx.Send(utils.GenerateFilterMessage(ad), telebot.ModeHTML, selector["price-history"])
 				ctx.Set(fmt.Sprintf("%d", ad.ID), ad)
 				b.Bot.Handle(&telebot.InlineButton{Unique: "PriceHistory"}, func(c telebot.Context) error {
-					data := ctx.Get(c.Data()).(models.Ad)
+					var data models.Ad
+					if ctx.Get(c.Data()) != nil {
+						data = ctx.Get(c.Data()).(models.Ad)
+					}
+					
 					list, err := b.repo.GetPriceHistory(data.ID)
 					if err != nil {
 						return c.Send("Error in fetch data")
 					}
+					log.Println(list)
 					return c.Send(utils.GeneratePriceHistory(list))
 				})
 			}
