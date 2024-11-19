@@ -28,7 +28,7 @@ var CrawlerTypes []CrawlerType = []CrawlerType{
 type CrawlerInterface interface {
 	CrawlAdsLinks(ctx context.Context, searchUrl string) ([]string, int, error)
 	CrawlPageUrl(ctx context.Context, pageUrl string) (*Ad, int, error)
-	RunCrawler()
+	RunCrawler(timeout time.Duration)
 }
 
 func New(crawlerType CrawlerType, config *config.Config, d database.IRepository, maxDeepth int, alerter *alerting.Alerter) (CrawlerInterface, error) {

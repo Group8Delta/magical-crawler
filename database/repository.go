@@ -56,6 +56,7 @@ type IRepository interface {
 	GetUserByTelegramId(id int) (*models.User, error)
 	DeleteWatchListByFilterId(filterId int, userId int) error
 	IncrementVisitCount(adID uint) error
+	GetCrawlerSetting() (models.CrawlerSetting, error)
 }
 
 type Repository struct {
@@ -70,6 +71,12 @@ func (r *Repository) GetWatchListFiltersByTelegramId(id int) ([]models.Filter, e
 		return nil, res.Error
 	}
 	return filters, nil
+}
+
+func (r *Repository) GetCrawlerSetting() (models.CrawlerSetting, error) {
+	setting := models.CrawlerSetting{}
+	res := r.db.GetDb().First(&setting)
+	return setting, res.Error
 }
 
 func (r *Repository) CreateFilter(filter Dtos.FilterDto) models.Filter {
