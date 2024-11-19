@@ -11,6 +11,7 @@ type User struct {
 	TelegramID   uint `gorm:"uniqueIndex;default 0"`
 	FirstName    string
 	LastName     string
+	Username     string
 	Email        *string
 	PasswordHash *string
 	RoleID       uint
@@ -19,6 +20,16 @@ type User struct {
 	WatchLists   []WatchList
 	FilteredAds  []FilteredAd
 }
+
+/*
+	db := database.New()
+	repo := repository.NewRepository(db)
+	filterService := FilterServices.NewFilterServices(repo,notifier)
+	//
+	filterService.CreateFilter(...)
+
+
+*/
 
 func IsSuperAdmin(db *gorm.DB, userID uint) bool {
 	var user User
@@ -33,7 +44,7 @@ func IsSuperAdmin(db *gorm.DB, userID uint) bool {
 	return user.Role.Name == "Super Admin"
 }
 
-func FindOrCreateUser(db *gorm.DB, telegramID uint, firstName, lastName string) (*User, error) {
+func FindOrCreateUser(db *gorm.DB, telegramID uint, firstName, lastName, username string) (*User, error) {
 	var user User
 
 	result := db.Preload("Role").First(&user, "telegram_id = ?", telegramID)
@@ -49,6 +60,7 @@ func FindOrCreateUser(db *gorm.DB, telegramID uint, firstName, lastName string) 
 			FirstName:  firstName,
 			LastName:   lastName,
 			RoleID:     userRole.ID,
+			Username:   username,
 		}
 		if err := db.Create(&user).Error; err != nil {
 			log.Printf("Error creating user: %v", err)
