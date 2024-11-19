@@ -49,6 +49,7 @@ const (
 	ForBuy              = "برای خرید"
 	GoButton            = "بزن بریم"
 	RemoveButton        = "بیخیال"
+	PriceHistory        = "آمار قیمت"
 	WatchListButton     = "افزودن فیلتر به فیلتر های منتخب"
 )
 

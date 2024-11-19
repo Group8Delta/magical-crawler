@@ -21,6 +21,7 @@ type IRepository interface {
 	CreateAd(ad Dtos.AdDto) *models.Ad
 	UpdateAd(ad Dtos.AdDto) (*models.Ad, error)
 	CreatePriceHistory(ph Dtos.PriceHistoryDto) *models.PriceHistory
+	GetPriceHistory(adID uint) ([]models.PriceHistory, error)
 	GetAdminUsers() ([]*models.User, error)
 	GetAdsByFilterId(filterId int) ([]models.Ad, error)
 	// Log
@@ -224,6 +225,12 @@ func (r *Repository) CreatePriceHistory(ph Dtos.PriceHistoryDto) *models.PriceHi
 
 	r.db.GetDb().Create(&p)
 	return &p
+}
+
+func (r *Repository) GetPriceHistory(adID uint) ([]models.PriceHistory, error) {
+	var list []models.PriceHistory
+	result := r.db.GetDb().Where("id=?",adID).Find(&list).Limit(10).Order("submitted_at DESC")
+	return list, result.Error
 }
 
 func (r *Repository) GetAdminUsers() ([]*models.User, error) {

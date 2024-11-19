@@ -45,6 +45,24 @@ func GenerateFilterMessage(ad models.Ad) string {
 	return builder.String()
 }
 
+func GeneratePriceHistory(list []models.PriceHistory) string {
+
+	var builder strings.Builder
+	builder.WriteString("تغیرات قیمت:\n")
+
+	for i := 0; i < len(list); i++ {
+		item := list[i]
+		if item.Price != 0 {
+			builder.WriteString(fmt.Sprintf("%d. قیمت : %d \n", i+1, item.Price))
+		}else if item.RentPrice != nil {
+			builder.WriteString(fmt.Sprintf("%d. قیمت اجاره : %d \n", i+1, item.RentPrice))
+		}
+	}
+
+	builder.WriteString("\n")
+	return builder.String()
+}
+
 func GenerateCrawlerLog(logs []models.CrawlerFunctionality) string {
 	var builder strings.Builder
 	builder.WriteString(fmt.Sprintf("%s:\n", constants.CrawlerStatusList))
@@ -61,6 +79,7 @@ func GenerateCrawlerLog(logs []models.CrawlerFunctionality) string {
 				"failed crawl: %d\n\n",
 			index+1, formattedDate, log.Duration, log.CPUUsage, log.RAMUsage, log.TotalRequests, log.SuccessfulRequests, log.FailedRequests))
 	}
+
 	return builder.String()
 }
 

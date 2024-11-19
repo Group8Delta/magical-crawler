@@ -117,17 +117,18 @@ func SearchHandlers(b *Bot) func(ctx telebot.Context) error {
 
 	var (
 		selector = map[string]*telebot.ReplyMarkup{
-			"ad-type":  newReplyMarkup(),
-			"menu":     newReplyMarkup(),
-			"price":    newReplyMarkup(),
-			"area":     newReplyMarkup(),
-			"room":     newReplyMarkup(),
-			"property": newReplyMarkup(),
-			"age":      newReplyMarkup(),
-			"floor":    newReplyMarkup(),
-			"yes-no":   newReplyMarkup(),
-			"ad-date":  newReplyMarkup(),
-			"location": newReplyMarkup(),
+			"ad-type":       newReplyMarkup(),
+			"menu":          newReplyMarkup(),
+			"price":         newReplyMarkup(),
+			"area":          newReplyMarkup(),
+			"room":          newReplyMarkup(),
+			"property":      newReplyMarkup(),
+			"age":           newReplyMarkup(),
+			"floor":         newReplyMarkup(),
+			"yes-no":        newReplyMarkup(),
+			"ad-date":       newReplyMarkup(),
+			"location":      newReplyMarkup(),
+			"price-history": newReplyMarkup(),
 		}
 
 		YNButtons = []telebot.Btn{
@@ -508,12 +509,28 @@ func SearchHandlers(b *Bot) func(ctx telebot.Context) error {
 			}
 			for _, ad := range ads {
 				photoURL := ad.PhotoUrl
+				priceHistoryBtn := selector["price-history"].Data(constants.PriceHistory, "PriceHistory", fmt.Sprintf("%d", ad.ID))
+				selector["price-history"].Inline(selector["prce-history"].Row(priceHistoryBtn))
+
 				if photoURL != nil {
-					pic := &telebot.Photo{File: telebot.FromURL(*photoURL), Caption: utils.GenerateFilterMessage(ad), CaptionAbove: true}
-					ctx.SendAlbum(telebot.Album{pic}, telebot.ModeHTML)
-				} else {
-					ctx.Send(utils.GenerateFilterMessage(ad), telebot.ModeHTML)
+					pic := &telebot.Photo{File: telebot.FromURL(*photoURL)}
+					ctx.SendAlbum(telebot.Album{pic})
 				}
+				ctx.Send(utils.GenerateFilterMessage(ad), telebot.ModeHTML, selector["price-history"])
+				ctx.Set(fmt.Sprintf("%d", ad.ID), ad)
+				b.Bot.Handle(&telebot.InlineButton{Unique: "PriceHistory"}, func(c telebot.Context) error {
+					var data models.Ad
+					if ctx.Get(c.Data()) != nil {
+						data = ctx.Get(c.Data()).(models.Ad)
+					}
+					
+					list, err := b.repo.GetPriceHistory(data.ID)
+					if err != nil {
+						return c.Send("Error in fetch data")
+					}
+					log.Println(list)
+					return c.Send(utils.GeneratePriceHistory(list))
+				})
 			}
 			ExportFileBot(ads, "csv", ctx)
 			filters.removeAllValue()
