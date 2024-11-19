@@ -41,7 +41,7 @@ type IRepository interface {
 	//User methods
 	GetUserByUsername(username string) (*models.User, error)
 	// bookmark
-	//CreateBookmark(bookmark Dtos.BookmarkDto) error
+	CreateBookmark(bookmark Dtos.BookmarkDto) error
 	DeleteBookmark(adid, userid uint) error
 	GetBookmarksByUserID(userid uint) ([]Dtos.BookmarkToShowDto, error)
 	GetPublicBookmarksByUserID(userid uint) ([]Dtos.BookmarkToShowDto, error)
