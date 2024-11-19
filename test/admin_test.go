@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"magical-crwler/services/admin"
+	"magical-crwler/utils"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/stretchr/testify/assert"
@@ -240,4 +241,12 @@ func TestListAdmins_Success(t *testing.T) {
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("expectations not met: %v", err)
 	}
+}
+
+func TestListCrawlerStausLogs(t *testing.T) {
+	adminService, _ := setupTestDB(t)
+	logs, err := adminService.ListCrawlerStatusLogs()
+	assert.NoError(t, err)
+	result := utils.GenerateCrawlerLog(logs)
+	assert.NotEmpty(t, result)
 }

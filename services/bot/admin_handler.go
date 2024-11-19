@@ -5,6 +5,7 @@ import (
 	"log"
 	"magical-crwler/constants"
 	"magical-crwler/services/admin"
+	"magical-crwler/utils"
 	"strconv"
 	"strings"
 
@@ -112,7 +113,7 @@ func AdminListHandler(b *Bot, db *gorm.DB) func(ctx telebot.Context) error {
 func CrawlerStatusLogs(b *Bot, db *gorm.DB) func(ctx telebot.Context) error {
 	return func(ctx telebot.Context) error {
 		adminService := admin.NewAdminService(db)
-		logs, err := adminService.ListCrawlerStausLogs()
+		logs, err := adminService.ListCrawlerStatusLogs()
 		if err != nil {
 			log.Println("Error retrieving admin list:", err)
 			return ctx.Reply("An error occurred while retrieving the admin list.")
@@ -121,15 +122,6 @@ func CrawlerStatusLogs(b *Bot, db *gorm.DB) func(ctx telebot.Context) error {
 		if len(logs) == 0 {
 			return ctx.Reply(constants.EmptyCrawlerStatusList)
 		}
-
-		var builder strings.Builder
-		builder.WriteString(fmt.Sprintf("%s:\n", constants.CrawlerStatusList))
-		builder.WriteString("date\tducration\tcpu\tram(M)\tnumer of request\tsuccessful crawl\tfailed crawl\n")
-		for index, log := range logs {
-			formattedDate := log.Date.Format("2006-01-02 15:04:05") // Format the date
-			builder.WriteString(fmt.Sprintf("%d. %s\t%d\t%d\t%d\t%d\t%d\t%d\n", index+1, formattedDate, log.Duration, log.CPUUsage, log.RAMUsage, log.TotalRequests, log.SuccessfulRequests, log.FailedRequests))
-		}
-
-		return ctx.Reply(builder.String())
+		return ctx.Reply(utils.GenerateCrawlerLog(logs))
 	}
 }
