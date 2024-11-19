@@ -42,7 +42,8 @@ func (p *postgresDb) Init(cfg *config.Config) error {
 		&models.Filter{},
 		&models.Log{},
 		&models.Access{},
-		&models.AccessLevel{})
+		&models.AccessLevel{},
+		&models.CrawlerSetting{})
 
 	sqlDb.SetMaxIdleConns(cfg.DatabaseMaxIdleConns)
 	sqlDb.SetMaxOpenConns(cfg.DatabaseMaxOpenConns)

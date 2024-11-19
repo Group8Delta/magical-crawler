@@ -66,18 +66,20 @@ func main() {
 func initialCrawlers(config *config.Config, repo database.IRepository, alerter *alerting.Alerter) {
 	runIncrementalCrawl(config, repo, alerter)
 	if config.EnableFullCrawl {
-		runCrawlers(config, repo, 0, alerter)
+		timeout, _ := getCrawlerSetting(repo)
+		runCrawlers(config, repo, 0, alerter, timeout)
 		fmt.Println("full crawl started")
 	}
 }
 
-func runCrawlers(c *config.Config, repo database.IRepository, maxDeepth int, alerter *alerting.Alerter) {
+func runCrawlers(c *config.Config, repo database.IRepository, maxDeepth int, alerter *alerting.Alerter, timeout time.Duration) {
+
 	for _, v := range crawler.CrawlerTypes {
 		crawler, err := crawler.New(v, c, repo, maxDeepth, alerter)
 		if err != nil {
 			panic("Failed to initial Crawler: " + err.Error())
 		}
-		go crawler.RunCrawler()
+		go crawler.RunCrawler(timeout)
 
 	}
 }
@@ -89,11 +91,12 @@ func runIncrementalCrawl(c *config.Config, repo database.IRepository, alerter *a
 		for {
 			select {
 			case <-ticker.C:
+				timeout, pageLimit := getCrawlerSetting(repo)
 				err := setAdminTelegramIds(repo)
 				if err != nil {
 					fmt.Println("set admins had error:", err)
 				}
-				runCrawlers(c, repo, 1, alerter)
+				runCrawlers(c, repo, pageLimit, alerter, timeout)
 
 			}
 		}
@@ -123,4 +126,19 @@ func setAdminTelegramIds(repo database.IRepository) error {
 		config.AdminTelegramIds = append(config.AdminTelegramIds, int(v.TelegramID))
 	}
 	return nil
+}
+
+func getCrawlerSetting(repo database.IRepository) (timeout time.Duration, pageLimit int) {
+	setting, err := repo.GetCrawlerSetting()
+
+	if err != nil {
+		fmt.Printf("error in get Crawler setting:%v\n", err)
+		timeout = time.Second * 2000
+		pageLimit = 1
+	} else {
+		timeout = time.Second * time.Duration(setting.CrawlTimeOutPerSearchUrlInSecond)
+		pageLimit = setting.PageNumberLimit
+
+	}
+	return timeout, pageLimit
 }

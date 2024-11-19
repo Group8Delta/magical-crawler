@@ -447,9 +447,9 @@ func (c *DivarCrawler) CrawlPageUrl(ctx context.Context, pageUrl string) (*Ad, i
 }
 
 // max deepth 0 means crawl infinity
-func (c *DivarCrawler) RunCrawler() {
+func (c *DivarCrawler) RunCrawler(timeout time.Duration) {
 	for _, v := range divar_search_urls {
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second*2000)
+		ctx, cancel := context.WithTimeout(context.Background(), timeout)
 
 		wp := NewWorkerPool(v, numberOfCrawlerWorkers, c)
 

@@ -402,9 +402,9 @@ func (c *SheypoorCrawler) getSellerPhone(id string) (string, error) {
 }
 
 // max deepth 0 means crawl infinity
-func (c *SheypoorCrawler) RunCrawler() {
+func (c *SheypoorCrawler) RunCrawler(timeout time.Duration) {
 	for _, v := range sheypoor_search_urls {
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second*2000)
+		ctx, cancel := context.WithTimeout(context.Background(), timeout)
 
 		wp := NewWorkerPool(v, numberOfCrawlerWorkers, c)
 
