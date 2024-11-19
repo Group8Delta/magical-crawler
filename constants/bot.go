@@ -225,7 +225,7 @@ const (
 	AdminAddedMsg          = "ادمین با موفقیت اضافه شد"
 	AdminRemovedMsg        = "ادمین با موفقیت حذف شد"
 	AdminActionMsg         = "یکی از گزینه ها رو انتخاب کن:"
-	WrongUserIdFromat      = "لطفا آیدی یوزر رو بدرستی وارد کن"
+	WrongUserIdFormat      = "لطفا آیدی یوزر رو بدرستی وارد کن"
 	AdminNotFound          = "ادمین پیدا نشد"
 	UserNotFound           = "کاربر پیدا نشد"
 	EmptyAdminList         = "لیست ادمین ها خالی است"
@@ -234,6 +234,15 @@ const (
 	CrawlerStatusList      = "لیست لاگ عملکرد کرالر "
 	AdminID                = "آیدی"
 	AdminName              = "اسم"
+	UserID                 = "آیدی"
+	UserName               = "اسم"
+	UserList               = "لیست یوزر ها"
+	EmptyUserList          = "لیست کاربر ها خالی است"
+	ListCrawlInfoButton    = "اطلاعات کراول کاربران"
+	EmptyUserCrawlInfoList = "لیست اطلاعات کراول کاربران خالی است "
+	UserCrawlInfoList      = "لیست اطلاعات کراول ها:"
+	UserCrawlInfoQuestion  = "آیدی کاربری که اطلاعات کراول آن را میخواهی وارد کن"
+	CrawlInfoButton        = "اطلاعات کراول کاربر"
 )
 
 // Popular items menue
