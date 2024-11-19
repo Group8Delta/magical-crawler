@@ -82,10 +82,10 @@ func (s *AdminService) ListAdmins() ([]models.User, error) {
 }
 
 
-func (s *AdminService) ListCrawlerStausLogs() ([]models.CrawlerFunctionality, error) {
+func (s *AdminService) ListCrawlerStatusLogs() ([]models.CrawlerFunctionality, error) {
 	var logs []models.CrawlerFunctionality
 	if err := s.db.Find(&logs).Limit(10).Error; err != nil {
-		log.Println("Error retrieving crawler staus logs:", err)
+		log.Println("Error retrieving crawler status logs:", err)
 		return nil, err
 	}
 	return logs, nil

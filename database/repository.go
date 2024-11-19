@@ -204,6 +204,16 @@ func (r *Repository) CreatePriceHistory(ph Dtos.PriceHistoryDto) *models.PriceHi
 	return &p
 }
 
+func (r *Repository) SearchPriceHistory(dto Dtos.SearchPriceHistoryDto) ([]models.PriceHistory, error) {
+
+	var historyList []models.PriceHistory
+	result := r.db.
+		GetDb().
+		Where("ad_id=? AND submit_date BETWEEN ? AND ?", dto.AdID, dto.DateFrom, dto.DateTo).
+		Find(&historyList)
+	return historyList, result.Error
+}
+
 func (r *Repository) GetAdminUsers() ([]*models.User, error) {
 	var users []*models.User
 

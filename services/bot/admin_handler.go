@@ -112,7 +112,7 @@ func AdminListHandler(b *Bot, db *gorm.DB) func(ctx telebot.Context) error {
 func CrawlerStatusLogs(b *Bot, db *gorm.DB) func(ctx telebot.Context) error {
 	return func(ctx telebot.Context) error {
 		adminService := admin.NewAdminService(db)
-		logs, err := adminService.ListCrawlerStausLogs()
+		logs, err := adminService.ListCrawlerStatusLogs()
 		if err != nil {
 			log.Println("Error retrieving admin list:", err)
 			return ctx.Reply("An error occurred while retrieving the admin list.")

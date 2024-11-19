@@ -57,6 +57,12 @@ type PriceHistoryDto struct {
 	SubmittedAt time.Time
 }
 
+type SearchPriceHistoryDto struct {
+	AdID        uint
+	DateFrom time.Time
+	DateTo time.Time
+}
+
 type WatchListDto struct {
 	UserId      int
 	FilterId    int
