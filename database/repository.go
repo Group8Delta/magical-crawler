@@ -56,8 +56,9 @@ type IRepository interface {
 	GetWatchListFiltersByTelegramId(id int) ([]models.Filter, error)
 	GetUserByTelegramId(id int) (*models.User, error)
 	DeleteWatchListByFilterId(filterId int, userId int) error
-	IncrementVisitCount(adID uint) error
 	GetCrawlerSetting() (models.CrawlerSetting, error)
+	IncrementVisitCounts(adIDs []uint) error
+	InsertFilteredAds(filteredAds []models.FilteredAd) error
 }
 
 type Repository struct {
@@ -580,9 +581,18 @@ func (r *Repository) DeleteWatchList(id int) error {
 	return r.db.GetDb().Save(&w).Error
 }
 
-func (r *Repository) IncrementVisitCount(adID uint) error {
-	res := r.db.GetDb().Model(&models.Ad{}).Where("id = ?", adID).Update("visit_count", gorm.Expr("visit_count + 1"))
+func (r *Repository) IncrementVisitCounts(adIDs []uint) error {
+	res := r.db.GetDb().Model(&models.Ad{}).
+		Where("id IN ?", adIDs).
+		Update("visit_count", gorm.Expr("visit_count + 1"))
 	return res.Error
+}
+
+func (r *Repository) InsertFilteredAds(filteredAds []models.FilteredAd) error {
+	if err := r.db.GetDb().Create(&filteredAds).Error; err != nil {
+		return err
+	}
+	return nil
 }
 
 func (r *Repository) DeleteWatchListByFilterId(filterId int, userId int) error {

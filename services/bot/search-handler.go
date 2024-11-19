@@ -35,7 +35,7 @@ type FilterValue struct {
 	subButton []telebot.Btn
 }
 
-func (f *Filters) startSearch(repo database.IRepository) ([]models.Ad, error) {
+func (f *Filters) startSearch(repo database.IRepository) ([]models.Ad, models.Filter, error) {
 	filters := Dtos.FilterDto{
 		PriceRange:            f.price.data.PriceRange,
 		RentPriceRange:        f.price.data.RentPriceRange,
@@ -51,19 +51,13 @@ func (f *Filters) startSearch(repo database.IRepository) ([]models.Ad, error) {
 		CreationTimeRangeFrom: f.adDate.data.CreationTimeRangeFrom,
 		CreationTimeRangeTo:   time.Now(),
 	}
-	filterModel := repo.CreateFilter(filters)
-	ads, err := repo.GetAdsByFilterId(int(filterModel.ID))
+	filter := repo.CreateFilter(filters)
+	ads, err := repo.GetAdsByFilterId(int(filter.ID))
 	if err != nil {
-		return nil, err
+		return nil, filter, err
 	}
 
-	for _, ad := range ads {
-        if err := repo.IncrementVisitCount(ad.ID); err != nil {
-            return nil, err
-        }
-    }
-
-	return ads, nil
+	return ads, filter, nil
 }
 func (f *Filters) removeAllValue() {
 	f.adType.value = ""
@@ -113,7 +107,7 @@ func newReplyMarkup() *telebot.ReplyMarkup {
 	return &telebot.ReplyMarkup{RemoveKeyboard: true, ResizeKeyboard: true}
 }
 
-func SearchHandlers(b *Bot) func(ctx telebot.Context) error {
+func SearchHandlers(b *Bot, user *models.User, db database.DbService) func(ctx telebot.Context) error {
 
 	var (
 		selector = map[string]*telebot.ReplyMarkup{
@@ -499,7 +493,7 @@ func SearchHandlers(b *Bot) func(ctx telebot.Context) error {
 			return ctx.EditOrSend(filters.message(), selector["location"])
 		case "Search":
 			ctx.Send(constants.Loading)
-			ads, err := filters.startSearch(b.repo)
+			ads, filter, err := filters.startSearch(b.repo)
 			if err != nil {
 				log.Println(err)
 				return ctx.Send(err)
@@ -534,6 +528,30 @@ func SearchHandlers(b *Bot) func(ctx telebot.Context) error {
 			}
 			ExportFileBot(ads, "csv", ctx)
 			filters.removeAllValue()
+
+			adIDs := make([]uint, len(ads))
+			for i, ad := range ads {
+				adIDs[i] = ad.ID
+			}
+			repo := database.NewRepository(db)
+			if err := repo.IncrementVisitCounts(adIDs); err != nil {
+				return err
+			}
+
+			filteredAds := make([]models.FilteredAd, len(ads))
+			timestamp := time.Now()
+			for i, ad := range ads {
+				filteredAds[i] = models.FilteredAd{
+					UserID:    user.ID,
+					FilterID:  filter.ID,
+					AdID:      ad.ID,
+					TimeStamp: timestamp,
+				}
+			}
+
+			if err := repo.InsertFilteredAds(filteredAds); err != nil {
+				return err
+			}
 			return ctx.Send(constants.SearchMsg)
 		case "Remove":
 			filters.removeAllValue()
