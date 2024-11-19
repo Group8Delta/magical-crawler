@@ -48,15 +48,13 @@ func GenerateFilterMessage(ad models.Ad) string {
 func GeneratePriceHistory(list []models.PriceHistory) string {
 
 	var builder strings.Builder
-	builder.WriteString("<b>تغیرات قیمت:</b>\n\n")
+	builder.WriteString("تغیرات قیمت:\n")
 
 	for i := 0; i < len(list); i++ {
 		item := list[i]
 		if item.Price != 0 {
 			builder.WriteString(fmt.Sprintf("%d. قیمت : %d \n", i+1, item.Price))
-		}
-
-		if item.RentPrice != nil {
+		}else if item.RentPrice != nil {
 			builder.WriteString(fmt.Sprintf("%d. قیمت اجاره : %d \n", i+1, item.RentPrice))
 		}
 	}
