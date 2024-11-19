@@ -68,3 +68,38 @@ type PopularFiltersDto struct {
 	Value      string
 	Count      int
 }
+
+type UserCrawlInfo struct {
+	UserID    uint
+	FirstName string
+	LastName  string
+	Filters   []FilterWithAds
+}
+
+type FilterWithAds struct {
+	FilterID uint
+	Filter   models.Filter
+	Ads      []AdSummary
+}
+
+type AdSummary struct {
+	ID          uint
+	Link        string
+	PhotoUrl    *string
+	Description *string
+	Price       *int64
+}
+type AccessDto struct {
+	OwnerID       uint
+	AccessedByID  uint
+	AccessLevelID uint
+}
+type BookmarkDto struct {
+	AdID     uint
+	UserID   uint
+	IsPublic bool
+}
+type BookmarkToShowDto struct {
+	Ad       models.Ad
+	IsPublic bool
+}

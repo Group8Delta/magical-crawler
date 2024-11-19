@@ -1,11 +1,14 @@
 package database
 
 import (
+	"errors"
 	"fmt"
 	"magical-crwler/models"
 	"magical-crwler/models/Dtos"
 	"sort"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 type IRepository interface {
@@ -36,13 +39,38 @@ type IRepository interface {
 	CreateWatchList(wl Dtos.WatchListDto) (*models.WatchList, error)
 	GetUserById(id int) (*models.User, error)
 	SaveCrawlerFunctionality(cf models.CrawlerFunctionality) error
+	//User methods
+	GetUserByUsername(username string) (*models.User, error)
+	// bookmark
+	CreateBookmark(bookmark Dtos.BookmarkDto) error
+	DeleteBookmark(adid, userid uint) error
+	GetBookmarksByUserID(userid uint) ([]Dtos.BookmarkToShowDto, error)
+	GetPublicBookmarksByUserID(userid uint) ([]Dtos.BookmarkToShowDto, error)
+	// access
+	AddAccess(access Dtos.AccessDto) error
+	GetAccessByIds(srcid, dstid uint) Dtos.AccessDto
+	GetAllAccessLevels() []models.AccessLevel
 	GetMostVisitedAds(count int) ([]models.Ad, error)
 	GetMostSearchedFilters(count int) ([]models.Filter, error)
 	GetMostSearchedSingleFilters(count int) ([]Dtos.PopularFiltersDto, error)
+	GetWatchListFiltersByTelegramId(id int) ([]models.Filter, error)
+	GetUserByTelegramId(id int) (*models.User, error)
+	DeleteWatchListByFilterId(filterId int, userId int) error
+	IncrementVisitCount(adID uint) error
 }
 
 type Repository struct {
 	db DbService
+}
+
+func (r *Repository) GetWatchListFiltersByTelegramId(id int) ([]models.Filter, error) {
+	filters := []models.Filter{}
+	res := r.db.GetDb().Raw("select f.* from users u inner join watch_lists wl on wl.user_id =u.id inner join filters f on f.id=wl.filter_id where wl.deleted_at is null and u.telegram_id =?", id).Scan(&filters)
+
+	if res.Error != nil {
+		return nil, res.Error
+	}
+	return filters, nil
 }
 
 func (r *Repository) CreateFilter(filter Dtos.FilterDto) models.Filter {
@@ -114,6 +142,12 @@ func (r *Repository) GetAdByLink(link string) (*models.Ad, error) {
 func (r *Repository) GetUserById(id int) (*models.User, error) {
 	user := models.User{}
 	res := r.db.GetDb().Where("id = ?", id).First(&user)
+	return &user, res.Error
+}
+
+func (r *Repository) GetUserByTelegramId(id int) (*models.User, error) {
+	user := models.User{}
+	res := r.db.GetDb().Where("telegram_id = ?", id).First(&user)
 	return &user, res.Error
 }
 
@@ -359,6 +393,7 @@ func (r *Repository) GetMostSearchedSingleFilters(count int) ([]Dtos.PopularFilt
 
 	return results, nil
 }
+
 func NewRepository(db DbService) *Repository {
 	return &Repository{db: db}
 }
@@ -538,6 +573,23 @@ func (r *Repository) DeleteWatchList(id int) error {
 	return r.db.GetDb().Save(&w).Error
 }
 
+func (r *Repository) IncrementVisitCount(adID uint) error {
+	res := r.db.GetDb().Model(&models.Ad{}).Where("id = ?", adID).Update("visit_count", gorm.Expr("visit_count + 1"))
+	return res.Error
+}
+
+func (r *Repository) DeleteWatchListByFilterId(filterId int, userId int) error {
+	w := models.WatchList{}
+	res := r.db.GetDb().Where("filter_id = ? and user_id = ? and deleted_at is null", filterId, userId).First(&w)
+	if res.Error != nil {
+		return res.Error
+	}
+	now := time.Now()
+	w.DeletedAt = &now
+
+	return r.db.GetDb().Save(&w).Error
+}
+
 func (r *Repository) UpdateWatchList(id int, wl Dtos.WatchListDto) error {
 	w := models.WatchList{}
 	res := r.db.GetDb().Where("id = ?", id).First(&w)
@@ -570,4 +622,116 @@ func (r *Repository) CreateWatchList(wl Dtos.WatchListDto) (*models.WatchList, e
 }
 func (r *Repository) SaveCrawlerFunctionality(cf models.CrawlerFunctionality) error {
 	return r.db.GetDb().Save(&cf).Error
+}
+
+func (r *Repository) GetUserByUsername(username string) (*models.User, error) {
+	var user models.User
+	err := r.db.GetDb().Where("username = ?", username).First(&user).Error
+	return &user, err
+}
+
+func (r *Repository) CreateBookmark(bookmark Dtos.BookmarkDto) error {
+
+	bm := models.Bookmark{
+		AdID:     bookmark.AdID,
+		UserID:   bookmark.UserID,
+		IsPublic: bookmark.IsPublic,
+	}
+
+	result := r.db.GetDb().Where("ad_id = ? AND user_id = ?", bm.AdID, bm.UserID).First(&bm)
+	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		r.db.GetDb().Create(&bm)
+		return nil
+	} else if result.Error != nil {
+		return result.Error
+	}
+	return errors.New("bookmark already exists")
+}
+
+func (r *Repository) DeleteBookmark(adid, userid uint) error {
+	bm := models.Bookmark{
+		AdID:   adid,
+		UserID: userid,
+	}
+
+	result := r.db.GetDb().Where("ad_id = ? AND user_id = ?", bm.AdID, bm.UserID).First(&bm)
+	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		return errors.New("bookmark not found")
+	}
+	r.db.GetDb().Where("ad_id = ? AND user_id = ?", bm.AdID, bm.UserID).Delete(&bm)
+	return nil
+}
+
+func (r *Repository) GetBookmarksByUserID(userid uint) ([]Dtos.BookmarkToShowDto, error) {
+	var bookmarks []models.Bookmark
+	err := r.db.GetDb().Preload("Ad").Where("user_id = ?", userid).Find(&bookmarks).Error
+	bmdtos := make([]Dtos.BookmarkToShowDto, 0, len(bookmarks))
+	for _, bm := range bookmarks {
+		bmdtos = append(bmdtos, Dtos.BookmarkToShowDto{
+			Ad:       bm.Ad,
+			IsPublic: bm.IsPublic,
+		})
+	}
+	return bmdtos, err
+}
+
+func (r *Repository) GetPublicBookmarksByUserID(userid uint) ([]Dtos.BookmarkToShowDto, error) {
+	var bookmarks []models.Bookmark
+	err := r.db.GetDb().Preload("Ad").Where("user_id = ? AND is_public = true", userid).Find(&bookmarks).Error
+	bmdtos := make([]Dtos.BookmarkToShowDto, 0, len(bookmarks))
+	for _, bm := range bookmarks {
+		bmdtos = append(bmdtos, Dtos.BookmarkToShowDto{
+			Ad:       bm.Ad,
+			IsPublic: bm.IsPublic,
+		})
+	}
+	return bmdtos, err
+}
+
+func (r *Repository) AddAccess(access Dtos.AccessDto) error {
+
+	ac := models.Access{
+		OwnerID:      access.OwnerID,
+		AccessedByID: access.AccessedByID,
+	}
+
+	result := r.db.GetDb().Where("owner_id = ? AND accessed_by_id = ?", ac.OwnerID, ac.AccessedByID).First(&ac)
+	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		ac.AccessedByID = access.AccessedByID
+		ac.OwnerID = access.OwnerID
+		ac.AccessLevelID = access.AccessLevelID
+		result = r.db.GetDb().Create(&ac)
+		return result.Error
+	} else if result.Error != nil {
+		return result.Error
+	}
+	ac.AccessLevelID = access.AccessLevelID
+	result = r.db.GetDb().Save(&ac)
+	return result.Error
+}
+func (r *Repository) GetAccessByIds(srcid, dstid uint) Dtos.AccessDto {
+	ac := models.Access{
+		OwnerID:      srcid,
+		AccessedByID: dstid,
+	}
+
+	result := r.db.GetDb().Where("owner_id = ? AND accessed_by_id = ?", ac.OwnerID, ac.AccessedByID).First(&ac)
+	if result.Error != nil {
+		return Dtos.AccessDto{
+			OwnerID:       srcid,
+			AccessedByID:  dstid,
+			AccessLevelID: 2,
+		}
+	}
+	return Dtos.AccessDto{
+		OwnerID:       ac.OwnerID,
+		AccessedByID:  ac.AccessedByID,
+		AccessLevelID: ac.AccessLevelID,
+	}
+}
+
+func (r *Repository) GetAllAccessLevels() []models.AccessLevel {
+	lvls := make([]models.AccessLevel, 0)
+	r.db.GetDb().Find(&lvls)
+	return lvls
 }

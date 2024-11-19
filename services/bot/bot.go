@@ -68,7 +68,7 @@ func (b *Bot) Notify(recipientIdentifier string, m *notification.Message) error 
 func (b *Bot) RegisterHandlers(db database.DbService) {
 	b.Bot.Handle("/menu", func(ctx telebot.Context) error {
 
-		user, err := models.FindOrCreateUser(db.GetDb(), uint(ctx.Sender().ID), ctx.Sender().FirstName, ctx.Sender().LastName)
+		user, err := models.FindOrCreateUser(db.GetDb(), uint(ctx.Sender().ID), ctx.Sender().FirstName, ctx.Sender().LastName, ctx.Sender().Username)
 		if err != nil {
 			return ctx.Reply("An error occurred while accessing the database.")
 		}
@@ -88,11 +88,16 @@ func (b *Bot) RegisterHandlers(db database.DbService) {
 	b.Bot.Handle(constants.AddAdminButton, AddAdminHandler(b, db.GetDb()))
 	b.Bot.Handle(constants.RemoveAdminButton, RemoveAdminHandler(b, db.GetDb()))
 	b.Bot.Handle(constants.ListAdminsButton, AdminListHandler(b, db.GetDb()))
+	b.Bot.Handle(constants.UserList, UserListHandler(b, db.GetDb()))
 	b.Bot.Handle(constants.CrawlerStatusButton, CrawlerStatusLogs(b, db.GetDb()))
+	b.Bot.Handle(constants.ListCrawlInfoButton, UsersCrawlInfoHandler(b, db.GetDb()))
+	b.Bot.Handle(constants.CrawlInfoButton, SingleUserCrawlInfoHandler(b, db.GetDb()))
 	b.Bot.Handle(constants.PopularItemsButton, PopularItemsHandler(b))
 	b.Bot.Handle(constants.PopularAdsButton, PopularAdsHandler(b, db))
 	b.Bot.Handle(constants.PopularSingleFiltersButton, PopularSingleFiltersHandler(b, db))
 	b.Bot.Handle(constants.PopularFiltersButton, PopularFiltersHandler(b, db))
+	b.Bot.Handle(constants.FiltersButton, WatchListHandler(b, db))
+
 }
 
 func (b *Bot) StartBot(db database.DbService) {

@@ -56,6 +56,13 @@ func (f *Filters) startSearch(repo database.IRepository) ([]models.Ad, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	for _, ad := range ads {
+        if err := repo.IncrementVisitCount(ad.ID); err != nil {
+            return nil, err
+        }
+    }
+
 	return ads, nil
 }
 func (f *Filters) removeAllValue() {
@@ -131,6 +138,7 @@ func SearchHandlers(b *Bot) func(ctx telebot.Context) error {
 
 		goBtn     = selector["menu"].Data(constants.GoButton, "Filters", "Search")
 		removeBtn = selector["menu"].Data(constants.RemoveButton, "Filters", "Remove")
+		wlBtn     = selector["menu"].Data(constants.WatchListButton, "Filters", "WatchListBtn")
 
 		filters = Filters{
 			adType: &FilterValue{button: selector["menu"].Data(constants.AdType, "Filters", "AdType"),
@@ -299,6 +307,7 @@ func SearchHandlers(b *Bot) func(ctx telebot.Context) error {
 		selector["menu"].Row(filters.area.button, filters.rooms.button, filters.propertyType.button),
 		selector["menu"].Row(filters.buildingAge.button, filters.floor.button, filters.storage.button),
 		selector["menu"].Row(filters.elevator.button, filters.adDate.button, filters.location.button),
+		selector["menu"].Row(wlBtn),
 		selector["menu"].Row(goBtn, removeBtn),
 	)
 
@@ -529,6 +538,45 @@ func SearchHandlers(b *Bot) func(ctx telebot.Context) error {
 		case "Remove":
 			filters.removeAllValue()
 			return ctx.EditOrSend(filters.message(), selector["menu"])
+		case "WatchListBtn":
+			ctx.EditOrSend("بازه زمانی ارسال اگهی های این فیلتر را به دقیقه وارد کنید:")
+			b.Bot.Handle(telebot.OnText, func(c telebot.Context) error {
+				// Retrieve the user message
+				userMessage := c.Message().Text
+				m, err := strconv.Atoi(userMessage)
+				if err != nil {
+					return ctx.Send("عدد وارد شده نامعتبر است")
+
+				}
+				f := Dtos.FilterDto{
+					PriceRange:            filters.price.data.PriceRange,
+					RentPriceRange:        filters.price.data.RentPriceRange,
+					ForRent:               filters.adType.data.ForRent,
+					City:                  filters.location.data.City,
+					SizeRange:             filters.area.data.SizeRange,
+					BedroomRange:          filters.rooms.data.BedroomRange,
+					FloorRange:            filters.floor.data.FloorRange,
+					HasStorage:            filters.storage.data.HasStorage,
+					HasElevator:           filters.elevator.data.HasElevator,
+					AgeRange:              filters.buildingAge.data.AgeRange,
+					IsApartment:           filters.propertyType.data.IsApartment,
+					CreationTimeRangeFrom: filters.adDate.data.CreationTimeRangeFrom,
+					CreationTimeRangeTo:   time.Now(),
+				}
+				u := ctx.Sender()
+				user, _ := b.repo.GetUserByTelegramId(int(u.ID))
+				filterModel := b.repo.CreateFilter(f)
+				_, err = b.repo.CreateWatchList(Dtos.WatchListDto{UpdateCycle: m, FilterId: int(filterModel.ID), UserId: int(user.ID)})
+				if err != nil {
+					return err
+
+				}
+				return ctx.EditOrSend("فیلتر انتخابی به لیست فیلتر های منتخب شما اضافه شد.")
+			})
+
+			// u := ctx.Sender()
+			return nil
+
 		default:
 			filters.removeAllValue()
 			return ctx.EditOrSend("/menu")

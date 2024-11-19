@@ -4,7 +4,7 @@ package constants
 const (
 	MainMenu                = "منوی اصلی"
 	SearchButton            = "جستجو"
-	FiltersButton           = "فیلتر ها"
+	FiltersButton           = "فیلتر های منتخب"
 	FavoritesButton         = "لیست علاقه‌مندی ها"
 	ExportButton            = "خروجی فایل"
 	AccountManagementButton = "مدیریت حساب"
@@ -50,6 +50,7 @@ const (
 	GoButton            = "بزن بریم"
 	RemoveButton        = "بیخیال"
 	PriceHistory        = "آمار قیمت"
+	WatchListButton     = "افزودن فیلتر به فیلتر های منتخب"
 )
 
 // Time Period Buttons
@@ -225,15 +226,24 @@ const (
 	AdminAddedMsg          = "ادمین با موفقیت اضافه شد"
 	AdminRemovedMsg        = "ادمین با موفقیت حذف شد"
 	AdminActionMsg         = "یکی از گزینه ها رو انتخاب کن:"
-	WrongUserIdFromat      = "لطفا آیدی یوزر رو بدرستی وارد کن"
+	WrongUserIdFormat      = "لطفا آیدی یوزر رو بدرستی وارد کن"
 	AdminNotFound          = "ادمین پیدا نشد"
 	UserNotFound           = "کاربر پیدا نشد"
 	EmptyAdminList         = "لیست ادمین ها خالی است"
 	EmptyCrawlerStatusList = "لیست لاگ عملکرد کرالر خالی است"
 	AdminList              = "لیست ادمین ها"
-	CrawlerStatusList      = "لیست لاگ عملکرد کرالر "
+	CrawlerStatusList      = "لیست 10 لاگ آخر عملکرد کرالر "
 	AdminID                = "آیدی"
 	AdminName              = "اسم"
+	UserID                 = "آیدی"
+	UserName               = "اسم"
+	UserList               = "لیست یوزر ها"
+	EmptyUserList          = "لیست کاربر ها خالی است"
+	ListCrawlInfoButton    = "اطلاعات کراول کاربران"
+	EmptyUserCrawlInfoList = "لیست اطلاعات کراول کاربران خالی است "
+	UserCrawlInfoList      = "لیست اطلاعات کراول ها:"
+	UserCrawlInfoQuestion  = "آیدی کاربری که اطلاعات کراول آن را میخواهی وارد کن"
+	CrawlInfoButton        = "اطلاعات کراول کاربر"
 )
 
 // Popular items menue

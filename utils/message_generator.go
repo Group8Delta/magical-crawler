@@ -2,6 +2,7 @@ package utils
 
 import (
 	"fmt"
+	"magical-crwler/constants"
 	"magical-crwler/models"
 	"strings"
 )
@@ -11,7 +12,7 @@ func GenerateFilterMessage(ad models.Ad) string {
 	var builder strings.Builder
 	builder.WriteString("<b>آگهی‌های جدید:</b>\n\n")
 
-	builder.WriteString(fmt.Sprintf("<b>%s</b> <a href='%s'>مشاهده آگهی</a>\n", ad.Link, ad.Link))
+	builder.WriteString(fmt.Sprintf("<b>%s</b> <a href='%s'>مشاهده آگهی</a>\n", ad.Title, ad.Link))
 	builder.WriteString(fmt.Sprintf("<b>فروشنده:</b> %s\n", ad.SellerName))
 
 	if ad.Description != nil {
@@ -61,5 +62,18 @@ func GeneratePriceHistory(list []models.PriceHistory) string {
 	}
 
 	builder.WriteString("\n")
+	return builder.String()
+}
+
+func GenerateCrawlerLog(logs []models.CrawlerFunctionality) string {
+
+	var builder strings.Builder
+	builder.WriteString(fmt.Sprintf("%s:\n", constants.CrawlerStatusList))
+	builder.WriteString("num date\t\t\tduration(s)\tcpu\tram(M)\tnumer of request\tsuccessful crawl\tfailed crawl\n")
+	for index, log := range logs {
+		formattedDate := log.Date.Format("2006-01-02 15:04:05") // Format the date
+		builder.WriteString(fmt.Sprintf("%d.  %s\t\t%d\t\t%d\t%d\t%d\t\t\t%d\t\t\t%d\n", index+1, formattedDate, log.Duration, log.CPUUsage, log.RAMUsage, log.TotalRequests, log.SuccessfulRequests, log.FailedRequests))
+	}
+
 	return builder.String()
 }

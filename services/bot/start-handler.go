@@ -14,7 +14,7 @@ func StartHandler(b *Bot, db *gorm.DB) func(ctx telebot.Context) error {
 		telUser := ctx.Sender()
 		log.Printf("%s %s | %d started bot", telUser.FirstName, telUser.LastName, telUser.ID)
 
-		user, err := models.FindOrCreateUser(db, uint(telUser.ID), telUser.FirstName, telUser.LastName)
+		user, err := models.FindOrCreateUser(db, uint(telUser.ID), telUser.FirstName, telUser.LastName, telUser.Username)
 		if err != nil {
 			return ctx.Reply("An error occurred while accessing the database.")
 		}

@@ -8,4 +8,6 @@ type FilteredAd struct {
 	FilterID  uint
 	AdID      uint
 	TimeStamp time.Time
+	Filter    Filter
+	Ad        Ad
 }
