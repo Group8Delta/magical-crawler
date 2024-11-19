@@ -6,6 +6,8 @@ import (
 	"magical-crwler/models/Dtos"
 	"sort"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 type IRepository interface {
@@ -41,6 +43,7 @@ type IRepository interface {
 	GetWatchListFiltersByTelegramId(id int) ([]models.Filter, error)
 	GetUserByTelegramId(id int) (*models.User, error)
 	DeleteWatchListByFilterId(filterId int, userId int) error
+	IncrementVisitCount(adID uint) error
 }
 
 type Repository struct {
@@ -371,6 +374,7 @@ func (r *Repository) GetMostSearchedSingleFilters(count int) ([]Dtos.PopularFilt
 
 	return results, nil
 }
+
 func NewRepository(db DbService) *Repository {
 	return &Repository{db: db}
 }
@@ -548,6 +552,11 @@ func (r *Repository) DeleteWatchList(id int) error {
 	w.DeletedAt = &now
 
 	return r.db.GetDb().Save(&w).Error
+}
+
+func (r *Repository) IncrementVisitCount(adID uint) error {
+	res := r.db.GetDb().Model(&models.Ad{}).Where("id = ?", adID).Update("visit_count", gorm.Expr("visit_count + 1"))
+	return res.Error
 }
 
 func (r *Repository) DeleteWatchListByFilterId(filterId int, userId int) error {

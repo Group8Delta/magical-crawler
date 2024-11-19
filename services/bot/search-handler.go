@@ -56,6 +56,13 @@ func (f *Filters) startSearch(repo database.IRepository) ([]models.Ad, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	for _, ad := range ads {
+        if err := repo.IncrementVisitCount(ad.ID); err != nil {
+            return nil, err
+        }
+    }
+
 	return ads, nil
 }
 func (f *Filters) removeAllValue() {
