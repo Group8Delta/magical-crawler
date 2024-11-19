@@ -88,6 +88,7 @@ type AdSummary struct {
 	PhotoUrl    *string
 	Description *string
 	Price       *int64
+}
 type AccessDto struct {
 	OwnerID       uint
 	AccessedByID  uint

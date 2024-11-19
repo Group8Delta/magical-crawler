@@ -68,7 +68,7 @@ func (b *Bot) Notify(recipientIdentifier string, m *notification.Message) error 
 func (b *Bot) RegisterHandlers(db database.DbService) {
 	b.Bot.Handle("/menu", func(ctx telebot.Context) error {
 
-		user, err := models.FindOrCreateUser(db.GetDb(), uint(ctx.Sender().ID), ctx.Sender().FirstName, ctx.Sender().LastName)
+		user, err := models.FindOrCreateUser(db.GetDb(), uint(ctx.Sender().ID), ctx.Sender().FirstName, ctx.Sender().LastName, ctx.Sender().Username)
 		if err != nil {
 			return ctx.Reply("An error occurred while accessing the database.")
 		}
