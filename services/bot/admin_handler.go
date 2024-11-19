@@ -5,6 +5,7 @@ import (
 	"log"
 	"magical-crwler/constants"
 	"magical-crwler/services/admin"
+	"magical-crwler/utils"
 	"strconv"
 	"strings"
 
@@ -144,7 +145,7 @@ func UserListHandler(b *Bot, db *gorm.DB) func(ctx telebot.Context) error {
 func CrawlerStatusLogs(b *Bot, db *gorm.DB) func(ctx telebot.Context) error {
 	return func(ctx telebot.Context) error {
 		adminService := admin.NewAdminService(db)
-		logs, err := adminService.ListCrawlerStausLogs()
+		logs, err := adminService.ListCrawlerStatusLogs()
 		if err != nil {
 			log.Println("Error retrieving admin list:", err)
 			return ctx.Reply("An error occurred while retrieving the admin list.")
@@ -153,14 +154,7 @@ func CrawlerStatusLogs(b *Bot, db *gorm.DB) func(ctx telebot.Context) error {
 		if len(logs) == 0 {
 			return ctx.Reply(constants.EmptyCrawlerStatusList)
 		}
-
-		var builder strings.Builder
-		builder.WriteString(fmt.Sprintf("%s:\n", constants.CrawlerStatusList))
-		for _, log := range logs {
-			builder.WriteString(fmt.Sprintf("%s duration: %s, cpu: %s, ram: %sM, numer of request: %s , successful crawl: %s, failed crawl: %s\n", log.Date, log.Duration, log.CPUUsage, log.RAMUsage, log.TotalRequests, log.SuccessfulRequests, log.FailedRequests))
-		}
-
-		return ctx.Reply(builder.String())
+		return ctx.Reply(utils.GenerateCrawlerLog(logs))
 	}
 }
 

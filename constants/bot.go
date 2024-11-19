@@ -231,7 +231,7 @@ const (
 	EmptyAdminList         = "لیست ادمین ها خالی است"
 	EmptyCrawlerStatusList = "لیست لاگ عملکرد کرالر خالی است"
 	AdminList              = "لیست ادمین ها"
-	CrawlerStatusList      = "لیست لاگ عملکرد کرالر "
+	CrawlerStatusList      = "لیست 10 لاگ آخر عملکرد کرالر "
 	AdminID                = "آیدی"
 	AdminName              = "اسم"
 	UserID                 = "آیدی"

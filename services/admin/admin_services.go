@@ -82,10 +82,11 @@ func (s *AdminService) ListAdmins() ([]models.User, error) {
 	return admins, nil
 }
 
-func (s *AdminService) ListCrawlerStausLogs() ([]models.CrawlerFunctionality, error) {
+func (s *AdminService) ListCrawlerStatusLogs() ([]models.CrawlerFunctionality, error) {
 	var logs []models.CrawlerFunctionality
-	if err := s.db.Find(&logs).Limit(10).Error; err != nil {
-		log.Println("Error retrieving crawler staus logs:", err)
+	if err := s.db.Order("date DESC").Limit(10).Find(&logs).Error; err != nil { 
+		// Add Order to sort by 'created_at' in descending order
+		log.Println("Error retrieving crawler status logs:", err)
 		return nil, err
 	}
 	return logs, nil

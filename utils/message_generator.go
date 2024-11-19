@@ -2,6 +2,7 @@ package utils
 
 import (
 	"fmt"
+	"magical-crwler/constants"
 	"magical-crwler/models"
 	"strings"
 )
@@ -41,5 +42,17 @@ func GenerateFilterMessage(ad models.Ad) string {
 	}
 
 	builder.WriteString("\n")
+	return builder.String()
+}
+
+func GenerateCrawlerLog(logs []models.CrawlerFunctionality) string {
+
+	var builder strings.Builder
+	builder.WriteString(fmt.Sprintf("%s:\n", constants.CrawlerStatusList))
+	builder.WriteString("num date\t\t\tduration(s)\tcpu\tram(M)\tnumer of request\tsuccessful crawl\tfailed crawl\n")
+	for index, log := range logs {
+		formattedDate := log.Date.Format("2006-01-02 15:04:05") // Format the date
+		builder.WriteString(fmt.Sprintf("%d.  %s\t\t%d\t\t%d\t%d\t%d\t\t\t%d\t\t\t%d\n", index+1, formattedDate, log.Duration, log.CPUUsage, log.RAMUsage, log.TotalRequests, log.SuccessfulRequests, log.FailedRequests))
+	}
 	return builder.String()
 }
