@@ -510,13 +510,12 @@ func SearchHandlers(b *Bot) func(ctx telebot.Context) error {
 				ctx.Send(utils.GenerateFilterMessage(ad), telebot.ModeHTML, selector["price-history"])
 				ctx.Set(fmt.Sprintf("%d", ad.ID), ad)
 				b.Bot.Handle(&telebot.InlineButton{Unique: "PriceHistory"}, func(c telebot.Context) error {
-					// first get ad from bot's context by add id
 					data := ctx.Get(c.Data()).(models.Ad)
-					// TODO : write price History here
-					// now you access to all data of ads like it:
-					d := *data.Description
-					// you have to pass string:
-					return c.Send(d)
+					list, err := b.repo.GetPriceHistory(data.ID)
+					if err != nil {
+						return c.Send("Error in fetch data")
+					}
+					return c.Send(utils.GeneratePriceHistory(list))
 				})
 			}
 			ExportFileBot(ads, "csv", ctx)
