@@ -49,6 +49,7 @@ const (
 	ForBuy              = "برای خرید"
 	GoButton            = "بزن بریم"
 	RemoveButton        = "بیخیال"
+	PriceHistory        = "آمار قیمت"
 )
 
 // Time Period Buttons
