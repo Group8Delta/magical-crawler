@@ -124,8 +124,10 @@ func CrawlerStatusLogs(b *Bot, db *gorm.DB) func(ctx telebot.Context) error {
 
 		var builder strings.Builder
 		builder.WriteString(fmt.Sprintf("%s:\n", constants.CrawlerStatusList))
-		for _, log := range logs {
-			builder.WriteString(fmt.Sprintf("%s duration: %s, cpu: %s, ram: %sM, numer of request: %s , successful crawl: %s, failed crawl: %s\n",log.Date,log.Duration,log.CPUUsage,log.RAMUsage,log.TotalRequests,log.SuccessfulRequests,log.FailedRequests))
+		builder.WriteString("date\tducration\tcpu\tram(M)\tnumer of request\tsuccessful crawl\tfailed crawl\n")
+		for index, log := range logs {
+			formattedDate := log.Date.Format("2006-01-02 15:04:05") // Format the date
+			builder.WriteString(fmt.Sprintf("%d. %s\t%d\t%d\t%d\t%d\t%d\t%d\n", index+1, formattedDate, log.Duration, log.CPUUsage, log.RAMUsage, log.TotalRequests, log.SuccessfulRequests, log.FailedRequests))
 		}
 
 		return ctx.Reply(builder.String())
