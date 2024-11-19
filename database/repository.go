@@ -2,7 +2,7 @@ package database
 
 import (
 	"errors"
-	"gorm.io/gorm"
+	"fmt"
 	"magical-crwler/models"
 	"magical-crwler/models/Dtos"
 	"sort"
@@ -38,12 +38,10 @@ type IRepository interface {
 	CreateWatchList(wl Dtos.WatchListDto) (*models.WatchList, error)
 	GetUserById(id int) (*models.User, error)
 	SaveCrawlerFunctionality(cf models.CrawlerFunctionality) error
-	// Access methods
-	SetAccess(access Dtos.AccessDto) error
 	//User methods
 	GetUserByUsername(username string) (*models.User, error)
 	// bookmark
-	CreateBookmark(bookmark Dtos.BookmarkDto) error
+	//CreateBookmark(bookmark Dtos.BookmarkDto) error
 	DeleteBookmark(adid, userid uint) error
 	GetBookmarksByUserID(userid uint) ([]Dtos.BookmarkToShowDto, error)
 	GetPublicBookmarksByUserID(userid uint) ([]Dtos.BookmarkToShowDto, error)
@@ -625,7 +623,7 @@ func (r *Repository) GetUserByUsername(username string) (*models.User, error) {
 	return &user, err
 }
 
-func (r *Repository) CreateBookmark(bookmark *models.Bookmark) error {
+func (r *Repository) CreateBookmark(bookmark Dtos.BookmarkDto) error {
 
 	bm := models.Bookmark{
 		AdID:     bookmark.AdID,
@@ -657,7 +655,7 @@ func (r *Repository) DeleteBookmark(adid, userid uint) error {
 	return nil
 }
 
-func (r *Repository) GetBookmarksByUserID(userid uint) ([]models.Bookmark, error) {
+func (r *Repository) GetBookmarksByUserID(userid uint) ([]Dtos.BookmarkToShowDto, error) {
 	var bookmarks []models.Bookmark
 	err := r.db.GetDb().Preload("Ad").Where("user_id = ?", userid).Find(&bookmarks).Error
 	bmdtos := make([]Dtos.BookmarkToShowDto, 0, len(bookmarks))
@@ -667,7 +665,7 @@ func (r *Repository) GetBookmarksByUserID(userid uint) ([]models.Bookmark, error
 			IsPublic: bm.IsPublic,
 		})
 	}
-	return bookmarks, err
+	return bmdtos, err
 }
 
 func (r *Repository) GetPublicBookmarksByUserID(userid uint) ([]Dtos.BookmarkToShowDto, error) {
