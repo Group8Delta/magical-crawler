@@ -371,6 +371,7 @@ func (r *Repository) GetMostSearchedSingleFilters(count int) ([]Dtos.PopularFilt
 
 	return results, nil
 }
+
 func NewRepository(db DbService) *Repository {
 	return &Repository{db: db}
 }
