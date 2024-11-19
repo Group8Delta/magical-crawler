@@ -188,7 +188,7 @@ func (r *Repository) CreatePriceHistory(ph Dtos.PriceHistoryDto) *models.PriceHi
 
 func (r *Repository) GetPriceHistory(adID uint) ([]models.PriceHistory, error) {
 	var list []models.PriceHistory
-	result := r.db.GetDb().Find(&list).Limit(10).Order("submitted_at DESC")
+	result := r.db.GetDb().Where("id=?",adID).Find(&list).Limit(10).Order("submitted_at DESC")
 	return list, result.Error
 }
 
