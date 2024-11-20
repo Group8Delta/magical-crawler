@@ -123,6 +123,7 @@ func SearchHandlers(b *Bot, user *models.User, db database.DbService) func(ctx t
 			"ad-date":       newReplyMarkup(),
 			"location":      newReplyMarkup(),
 			"price-history": newReplyMarkup(),
+			"export":        newReplyMarkup(),
 		}
 
 		YNButtons = []telebot.Btn{
@@ -316,6 +317,7 @@ func SearchHandlers(b *Bot, user *models.User, db database.DbService) func(ctx t
 	selector["yes-no"].Inline(selector["menu"].Split(2, YNButtons)...)
 	selector["ad-date"].Inline(selector["menu"].Split(2, filters.adDate.subButton)...)
 	selector["location"].Inline(selector["menu"].Split(4, filters.location.subButton)...)
+	selector["export"].Inline(selector["export"].Split(2, YNButtons)...)
 
 	// Buttons Handlers
 	b.Bot.Handle(&telebot.InlineButton{Unique: "Filters"}, func(ctx telebot.Context) error {
@@ -517,7 +519,7 @@ func SearchHandlers(b *Bot, user *models.User, db database.DbService) func(ctx t
 					if ctx.Get(c.Data()) != nil {
 						data = ctx.Get(c.Data()).(models.Ad)
 					}
-					
+
 					list, err := b.repo.GetPriceHistory(data.ID)
 					if err != nil {
 						return c.Send("Error in fetch data")
@@ -526,8 +528,6 @@ func SearchHandlers(b *Bot, user *models.User, db database.DbService) func(ctx t
 					return c.Send(utils.GeneratePriceHistory(list))
 				})
 			}
-			ExportFileBot(ads, "csv", ctx)
-			filters.removeAllValue()
 
 			adIDs := make([]uint, len(ads))
 			for i, ad := range ads {
@@ -552,18 +552,20 @@ func SearchHandlers(b *Bot, user *models.User, db database.DbService) func(ctx t
 			if err := repo.InsertFilteredAds(filteredAds); err != nil {
 				return err
 			}
-			return ctx.Send(constants.SearchMsg)
+			b.Bot.Handle(&telebot.InlineButton{Unique: "YesNo"}, exportFileHandler(ads, b))
+			filters.removeAllValue()
+			return ctx.Send(constants.ExportMsg, selector["export"])
 		case "Remove":
 			filters.removeAllValue()
 			return ctx.EditOrSend(filters.message(), selector["menu"])
 		case "WatchListBtn":
-			ctx.EditOrSend("بازه زمانی ارسال اگهی های این فیلتر را به دقیقه وارد کنید:")
+			ctx.EditOrSend(constants.TimeRangeMsg)
 			b.Bot.Handle(telebot.OnText, func(c telebot.Context) error {
 				// Retrieve the user message
 				userMessage := c.Message().Text
 				m, err := strconv.Atoi(userMessage)
 				if err != nil {
-					return ctx.Send("عدد وارد شده نامعتبر است")
+					return ctx.Send(constants.TimeRangeError)
 
 				}
 				f := Dtos.FilterDto{
@@ -589,7 +591,7 @@ func SearchHandlers(b *Bot, user *models.User, db database.DbService) func(ctx t
 					return err
 
 				}
-				return ctx.EditOrSend("فیلتر انتخابی به لیست فیلتر های منتخب شما اضافه شد.")
+				return ctx.EditOrSend(constants.BookMarkAddedMsg)
 			})
 
 			// u := ctx.Sender()
@@ -702,4 +704,22 @@ func getValue(value string) []string {
 		"Mazandaran":   {constants.Mazandaran, constants.Mazandaran},
 	}
 	return btnMap[value]
+}
+
+func exportFileHandler(ads []models.Ad, b *Bot) func(telebot.Context) error {
+	selector := newReplyMarkup()
+	csvBtn := selector.Data("csv", "type", "csv")
+	xlsxBtn := selector.Data("xlsx", "type", "xlsx")
+	selector.Inline(selector.Row(csvBtn, xlsxBtn))
+	return func(ctx telebot.Context) error {
+		if ctx.Data() == "Yes" {
+			b.Bot.Handle(&telebot.InlineButton{Unique: "type"}, func(ctx telebot.Context) error {
+				ExportFileBot(ads, ctx.Data(), ctx)
+				return ctx.Send(constants.SearchMsg)
+			})
+			return ctx.Send(constants.ExportTypeMsg, selector)
+		} else {
+			return ctx.Send(constants.SearchMsg)
+		}
+	}
 }
