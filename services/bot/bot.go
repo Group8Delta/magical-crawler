@@ -90,7 +90,20 @@ func (b *Bot) RegisterHandlers(db database.DbService) {
 	// 	b.Bot.Handle(&telebot.Btn{Unique: "export"}, ExportHandler(b))
 	// 	b.Bot.Handle(&telebot.Btn{Unique: "export_csv"}, export_csv_Handler(b))
 	// 	b.Bot.Handle(&telebot.Btn{Unique: "export_xlsx"}, export_xlsx_Handler(b))
-	b.Bot.Handle(constants.AdminPanelButton, AdminHandler(b))
+	b.Bot.Handle(constants.AdminPanelButton, func(ctx telebot.Context) error {
+		user, err := models.FindOrCreateUser(db.GetDb(), uint(ctx.Sender().ID), ctx.Sender().FirstName, ctx.Sender().LastName, ctx.Sender().Username)
+		if err != nil {
+			return ctx.Reply("An error occurred while accessing the database.")
+		}
+		return AdminHandler(b, user, db.GetDb())(ctx)
+	})
+	b.Bot.Handle(constants.MainMenuButton, func(ctx telebot.Context) error {
+		user, err := models.FindOrCreateUser(db.GetDb(), uint(ctx.Sender().ID), ctx.Sender().FirstName, ctx.Sender().LastName, ctx.Sender().Username)
+		if err != nil {
+			return ctx.Reply("An error occurred while accessing the database.")
+		}
+		return MainMenuHandler(ctx, db.GetDb(), user)
+	})
 	b.Bot.Handle(constants.AddAdminButton, AddAdminHandler(b, db.GetDb()))
 	b.Bot.Handle(constants.RemoveAdminButton, RemoveAdminHandler(b, db.GetDb()))
 	b.Bot.Handle(constants.ListAdminsButton, AdminListHandler(b, db.GetDb()))

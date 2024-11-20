@@ -241,9 +241,10 @@ const (
 	EmptyUserList          = "لیست کاربر ها خالی است"
 	ListCrawlInfoButton    = "اطلاعات کراول کاربران"
 	EmptyUserCrawlInfoList = "لیست اطلاعات کراول کاربران خالی است "
-	UserCrawlInfoList      = "لیست اطلاعات کراول ها:"
+	UserCrawlInfoList      = "لیست اطلاعات کراول ها"
 	UserCrawlInfoQuestion  = "آیدی کاربری که اطلاعات کراول آن را میخواهی وارد کن"
 	CrawlInfoButton        = "اطلاعات کراول کاربر"
+	MainMenuButton         = "منوی اصلی"
 )
 
 // Popular items menue

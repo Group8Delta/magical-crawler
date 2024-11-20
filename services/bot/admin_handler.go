@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"magical-crwler/constants"
+	"magical-crwler/models"
 	"magical-crwler/services/admin"
 	"magical-crwler/utils"
 	"strconv"
@@ -13,7 +14,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func AdminHandler(b *Bot) func(ctx telebot.Context) error {
+func AdminHandler(b *Bot, user *models.User, db *gorm.DB) func(ctx telebot.Context) error {
 	return func(ctx telebot.Context) error {
 		var menu = &telebot.ReplyMarkup{ResizeKeyboard: true}
 
@@ -24,13 +25,21 @@ func AdminHandler(b *Bot) func(ctx telebot.Context) error {
 		crawlerStatusBtn := menu.Text(constants.CrawlerStatusButton)
 		listCrawlInfoBtn := menu.Text(constants.ListCrawlInfoButton)
 		crawlInfoBtn := menu.Text(constants.CrawlInfoButton)
+		mainMenuBtn := menu.Text(constants.MainMenuButton)
 
-		menu.Reply(
-			menu.Row(removeAdminBtn, addAdminBtn),
-			menu.Row(listAdminsBtn, userListBtn),
-			menu.Row(listCrawlInfoBtn, crawlInfoBtn),
-			menu.Row(crawlerStatusBtn),
-		)
+		if models.IsSuperAdmin(db, user.ID) {
+			menu.Reply(
+				menu.Row(removeAdminBtn, addAdminBtn),
+				menu.Row(listAdminsBtn, userListBtn),
+				menu.Row(listCrawlInfoBtn, crawlInfoBtn),
+				menu.Row(crawlerStatusBtn, mainMenuBtn),
+			)
+		} else {
+			menu.Reply(
+				menu.Row(listCrawlInfoBtn, crawlerStatusBtn),
+				menu.Row(mainMenuBtn),
+			)
+		}
 
 		return ctx.Send(constants.AdminActionMsg, menu)
 	}
@@ -172,75 +181,82 @@ func UsersCrawlInfoHandler(b *Bot, db *gorm.DB) func(ctx telebot.Context) error 
 			return ctx.Reply(constants.EmptyUserCrawlInfoList)
 		}
 
-		var builder strings.Builder
-		builder.WriteString(fmt.Sprintf("%s:\n", constants.UserCrawlInfoList))
-
 		for _, filterWithAds := range filtersWithAds {
-			builder.WriteString(fmt.Sprintf("Filter ID: %d\n", filterWithAds.FilterID))
+			var filterBuilder strings.Builder
 
+			filterBuilder.WriteString(fmt.Sprintf("Filter ID: %d\n", filterWithAds.FilterID))
 			if filterWithAds.Filter.SearchQuery != nil {
-				builder.WriteString(fmt.Sprintf("Search Query: %s\n", *filterWithAds.Filter.SearchQuery))
+				filterBuilder.WriteString(fmt.Sprintf("Search Query: %s\n", *filterWithAds.Filter.SearchQuery))
 			}
 			if filterWithAds.Filter.PriceRange != nil {
-				builder.WriteString(fmt.Sprintf("Price Range: %d - %d\n", filterWithAds.Filter.PriceRange.Min, filterWithAds.Filter.PriceRange.Max))
+				filterBuilder.WriteString(fmt.Sprintf("Price Range: %d - %d\n", filterWithAds.Filter.PriceRange.Min, filterWithAds.Filter.PriceRange.Max))
 			}
 			if filterWithAds.Filter.RentPriceRange != nil {
-				builder.WriteString(fmt.Sprintf("Rent Price Range: %d - %d\n", filterWithAds.Filter.RentPriceRange.Min, filterWithAds.Filter.RentPriceRange.Max))
+				filterBuilder.WriteString(fmt.Sprintf("Rent Price Range: %d - %d\n", filterWithAds.Filter.RentPriceRange.Min, filterWithAds.Filter.RentPriceRange.Max))
 			}
-			builder.WriteString(fmt.Sprintf("For Rent: %t\n", filterWithAds.Filter.ForRent))
+			filterBuilder.WriteString(fmt.Sprintf("For Rent: %t\n", filterWithAds.Filter.ForRent))
 			if filterWithAds.Filter.City != nil {
-				builder.WriteString(fmt.Sprintf("City: %s\n", *filterWithAds.Filter.City))
+				filterBuilder.WriteString(fmt.Sprintf("City: %s\n", *filterWithAds.Filter.City))
 			}
 			if filterWithAds.Filter.Neighborhood != nil {
-				builder.WriteString(fmt.Sprintf("Neighborhood: %s\n", *filterWithAds.Filter.Neighborhood))
+				filterBuilder.WriteString(fmt.Sprintf("Neighborhood: %s\n", *filterWithAds.Filter.Neighborhood))
 			}
 			if filterWithAds.Filter.SizeRange != nil {
-				builder.WriteString(fmt.Sprintf("Size Range: %d - %d sqm\n", filterWithAds.Filter.SizeRange.Min, filterWithAds.Filter.SizeRange.Max))
+				filterBuilder.WriteString(fmt.Sprintf("Size Range: %d - %d sqm\n", filterWithAds.Filter.SizeRange.Min, filterWithAds.Filter.SizeRange.Max))
 			}
 			if filterWithAds.Filter.BedroomRange != nil {
-				builder.WriteString(fmt.Sprintf("Bedroom Range: %d - %d\n", filterWithAds.Filter.BedroomRange.Min, filterWithAds.Filter.BedroomRange.Max))
+				filterBuilder.WriteString(fmt.Sprintf("Bedroom Range: %d - %d\n", filterWithAds.Filter.BedroomRange.Min, filterWithAds.Filter.BedroomRange.Max))
 			}
 			if filterWithAds.Filter.FloorRange != nil {
-				builder.WriteString(fmt.Sprintf("Floor Range: %d - %d\n", filterWithAds.Filter.FloorRange.Min, filterWithAds.Filter.FloorRange.Max))
+				filterBuilder.WriteString(fmt.Sprintf("Floor Range: %d - %d\n", filterWithAds.Filter.FloorRange.Min, filterWithAds.Filter.FloorRange.Max))
 			}
 			if filterWithAds.Filter.HasElevator != nil {
-				builder.WriteString(fmt.Sprintf("Has Elevator: %t\n", *filterWithAds.Filter.HasElevator))
+				filterBuilder.WriteString(fmt.Sprintf("Has Elevator: %t\n", *filterWithAds.Filter.HasElevator))
 			}
 			if filterWithAds.Filter.HasStorage != nil {
-				builder.WriteString(fmt.Sprintf("Has Storage: %t\n", *filterWithAds.Filter.HasStorage))
+				filterBuilder.WriteString(fmt.Sprintf("Has Storage: %t\n", *filterWithAds.Filter.HasStorage))
 			}
 			if filterWithAds.Filter.AgeRange != nil {
-				builder.WriteString(fmt.Sprintf("Age Range: %d - %d years\n", filterWithAds.Filter.AgeRange.Min, filterWithAds.Filter.AgeRange.Max))
+				filterBuilder.WriteString(fmt.Sprintf("Age Range: %d - %d years\n", filterWithAds.Filter.AgeRange.Min, filterWithAds.Filter.AgeRange.Max))
 			}
 			if filterWithAds.Filter.IsApartment != nil {
-				builder.WriteString(fmt.Sprintf("Is Apartment: %t\n", *filterWithAds.Filter.IsApartment))
+				filterBuilder.WriteString(fmt.Sprintf("Is Apartment: %t\n", *filterWithAds.Filter.IsApartment))
 			}
 			if !filterWithAds.Filter.CreationTimeRangeFrom.IsZero() {
-				builder.WriteString(fmt.Sprintf("Created From: %s\n", filterWithAds.Filter.CreationTimeRangeFrom.Format("2006-01-02")))
+				filterBuilder.WriteString(fmt.Sprintf("Created From: %s\n", filterWithAds.Filter.CreationTimeRangeFrom.Format("2006-01-02")))
 			}
 			if !filterWithAds.Filter.CreationTimeRangeTo.IsZero() {
-				builder.WriteString(fmt.Sprintf("Created To: %s\n", filterWithAds.Filter.CreationTimeRangeTo.Format("2006-01-02")))
+				filterBuilder.WriteString(fmt.Sprintf("Created To: %s\n", filterWithAds.Filter.CreationTimeRangeTo.Format("2006-01-02")))
 			}
-			builder.WriteString(fmt.Sprintf("Searched Count: %d\n\n", filterWithAds.Filter.SearchedCount))
+			filterBuilder.WriteString(fmt.Sprintf("Searched Count: %d\n", filterWithAds.Filter.SearchedCount))
 
-			builder.WriteString(fmt.Sprintf("- Ads: %d\n", len(filterWithAds.Ads)))
+			if err := ctx.Reply(filterBuilder.String()); err != nil {
+				log.Println("Error sending filter details:", err)
+				return err
+			}
 
 			for _, ad := range filterWithAds.Ads {
-				builder.WriteString(fmt.Sprintf("  * Ad Link: %s\n", ad.Link))
+				var adBuilder strings.Builder
+
+				adBuilder.WriteString(fmt.Sprintf("Ad Link: %s\n", ad.Link))
 				if ad.Price != nil {
-					builder.WriteString(fmt.Sprintf("    Price: %d\n", *ad.Price))
+					adBuilder.WriteString(fmt.Sprintf("Price: %d\n", *ad.Price))
 				}
 				if ad.Description != nil {
-					builder.WriteString(fmt.Sprintf("    Description: %s\n", *ad.Description))
+					adBuilder.WriteString(fmt.Sprintf("Description: %s\n", *ad.Description))
 				}
 				if ad.PhotoUrl != nil {
-					builder.WriteString(fmt.Sprintf("    Photo: %s\n", *ad.PhotoUrl))
+					adBuilder.WriteString(fmt.Sprintf("Photo: %s\n", *ad.PhotoUrl))
+				}
+
+				if err := ctx.Reply(adBuilder.String()); err != nil {
+					log.Println("Error sending ad details:", err)
+					return err
 				}
 			}
-			builder.WriteString("\n")
 		}
 
-		return ctx.Reply(builder.String())
+		return nil
 	}
 }
 
@@ -274,10 +290,10 @@ func HandleSingleUserCrawlInfo(ctx telebot.Context, db *gorm.DB) error {
 		return ctx.Reply(constants.EmptyUserCrawlInfoList)
 	}
 
-	var builder strings.Builder
-	builder.WriteString(fmt.Sprintf("%s:\n", constants.UserCrawlInfoList))
-
 	for _, filterWithAds := range userCrawlInfo.Filters {
+		var builder strings.Builder
+		builder.WriteString(fmt.Sprintf("%s:\n", constants.CrawlInfoButton))
+
 		builder.WriteString(fmt.Sprintf("Filter ID: %d\n", filterWithAds.FilterID))
 
 		if filterWithAds.Filter.SearchQuery != nil {
@@ -325,22 +341,30 @@ func HandleSingleUserCrawlInfo(ctx telebot.Context, db *gorm.DB) error {
 		}
 		builder.WriteString(fmt.Sprintf("Searched Count: %d\n\n", filterWithAds.Filter.SearchedCount))
 
-		builder.WriteString(fmt.Sprintf("- Ads: %d\n", len(filterWithAds.Ads)))
+		if err := ctx.Reply(builder.String()); err != nil {
+			log.Println("Error sending filter information:", err)
+			return err
+		}
 
 		for _, ad := range filterWithAds.Ads {
-			builder.WriteString(fmt.Sprintf("  * Ad Link: %s\n", ad.Link))
+			var adBuilder strings.Builder
+			adBuilder.WriteString(fmt.Sprintf("Ad Link: %s\n", ad.Link))
 			if ad.Price != nil {
-				builder.WriteString(fmt.Sprintf("    Price: %d\n", *ad.Price))
+				adBuilder.WriteString(fmt.Sprintf("Price: %d\n", *ad.Price))
 			}
 			if ad.Description != nil {
-				builder.WriteString(fmt.Sprintf("    Description: %s\n", *ad.Description))
+				adBuilder.WriteString(fmt.Sprintf("Description: %s\n", *ad.Description))
 			}
 			if ad.PhotoUrl != nil {
-				builder.WriteString(fmt.Sprintf("    Photo: %s\n", *ad.PhotoUrl))
+				adBuilder.WriteString(fmt.Sprintf("Photo: %s\n", *ad.PhotoUrl))
+			}
+
+			if err := ctx.Reply(adBuilder.String()); err != nil {
+				log.Println("Error sending ad message:", err)
+				return err
 			}
 		}
-		builder.WriteString("\n")
 	}
 
-	return ctx.Reply(builder.String())
+	return nil
 }
