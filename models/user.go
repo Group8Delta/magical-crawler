@@ -44,6 +44,19 @@ func IsSuperAdmin(db *gorm.DB, userID uint) bool {
 	return user.Role.Name == "Super Admin"
 }
 
+func IsAdmin(db *gorm.DB, userID uint) bool {
+	var user User
+	err := db.Preload("Role").First(&user, userID).Error
+
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return false
+		}
+		return false
+	}
+	return user.Role.Name == "Admin" || user.Role.Name == "Super Admin"
+}
+
 func FindOrCreateUser(db *gorm.DB, telegramID uint, firstName, lastName, username string) (*User, error) {
 	var user User
 

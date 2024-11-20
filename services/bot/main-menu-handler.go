@@ -21,7 +21,7 @@ func MainMenuHandler(ctx telebot.Context, db *gorm.DB, user *models.User) error 
 		popularItemsBtn = menu.Text(constants.PopularItemsButton)
 	)
 
-	if models.IsSuperAdmin(db, user.ID) {
+	if models.IsAdmin(db, user.ID) {
 		menu.Reply(
 			menu.Row(searchBtn, filtersBtn),
 			menu.Row(exportBtn, bookmarkBtn),
